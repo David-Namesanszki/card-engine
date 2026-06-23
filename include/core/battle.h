@@ -1,13 +1,14 @@
 #pragma once
 
 #include <string>
-#include "cardPile.h"
-#include "eventBus.h"
+#include <functional>
+#include "core/cardPile.h"
+#include "engine/eventBus.h"
 #include "events/cardDrawnEvent.h"
 #include "events/cardTransferredToRightEvent.h"
 #include "events/cardDiscardedEvent.h"
 #include "events/drawPileRefilledEvent.h"
-#include "raid/captain.h"
+#include "core/captain.h"
 
 class Battle {
 public:
@@ -23,6 +24,11 @@ public:
     const CardPile& getDiscardPile() const { return _discardPile; }
     const CardPile& getLeftHand()    const { return _leftHand; }
     const CardPile& getRightHand()   const { return _rightHand; }
+
+    void onCardDrawn(std::function<void(CardDrawnEvent)> cb)                       { _cardDrawnEventBus.subscribe(cb); }
+    void onCardDiscarded(std::function<void(CardDiscardedEvent)> cb)               { _cardDiscardedEventBus.subscribe(cb); }
+    void onCardTransferredToRight(std::function<void(CardTransferredToRightEvent)> cb) { _cardTransferredToRightEventBus.subscribe(cb); }
+    void onDrawPileRefilled(std::function<void(DrawPileRefilledEvent)> cb)         { _drawPileRefilledEventBus.subscribe(cb); }
 private:
     Captain&  _captain;
     CardPile  _leftHand{5};
