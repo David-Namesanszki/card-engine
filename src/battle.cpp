@@ -1,7 +1,7 @@
-#include "battle.h"
+#include "core/battle.h"
 #include <vector>
 
-constexpr int DRAW_SIZE = 5;
+constexpr int DRAW_SIZE = 6;
 
 Battle::Battle(Captain& captain, int firePoints, const CardPile& deck)
     : _captain(captain), _actionPoints(0), _firePoints(firePoints), _drawPile(deck) {}
@@ -35,7 +35,7 @@ void Battle::drawCard() {
         if (_rightHand.isFull()) {
             uint32_t discardedCard = _rightHand.popLast();
             _discardPile.addCard(discardedCard);
-            _cardDiscardedEventBus.emit({discardedCard, _cardDiscardSound, _cardDiscardAnimation});
+            _cardDiscardedEventBus.emit({discardedCard, HandType::Right, _cardDiscardSound, _cardDiscardAnimation});
         }
         uint32_t transferredCard = _leftHand.popLast();
         _rightHand.addCard(transferredCard);
@@ -49,12 +49,18 @@ void Battle::drawCard() {
 
 void Battle::discardLeftHand() {
     std::vector<uint32_t> cards = _leftHand.clearOut();
-    for (auto cardId : cards) _discardPile.addCard(cardId);
+    for (auto cardId : cards) {
+        _discardPile.addCard(cardId);
+        _cardDiscardedEventBus.emit({cardId, HandType::Left, "", ""});
+    }
 }
 
 void Battle::discardRightHand() {
     std::vector<uint32_t> cards = _rightHand.clearOut();
-    for (auto cardId : cards) _discardPile.addCard(cardId);
+    for (auto cardId : cards) {
+        _discardPile.addCard(cardId);
+        _cardDiscardedEventBus.emit({cardId, HandType::Right, "", ""});
+    }
 }
 
 void Battle::playCard() {
