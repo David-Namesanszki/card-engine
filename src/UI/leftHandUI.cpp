@@ -8,7 +8,11 @@ LeftHandUI::LeftHandUI(Animator& animator, Vector2 pos, LeftHandUIConfig config)
     createSlots();
 }
 
-void LeftHandUI::addCard(CardUI card) {
+void LeftHandUI::addCard(const CardUI& card) {
+    _transform.addObject(&card.getTransform());
+    _render.addObject(&card.getRender());
+    _hitbox.addObject(&card.getHitBox());
+
     int slot = 1;
     for (auto& c : _cards) {
         if (_config.shiftAnimDef && slot < _config.slotCount)  {
@@ -16,15 +20,18 @@ void LeftHandUI::addCard(CardUI card) {
         }
         else if(slot < _config.slotCount){
             applyAnchor(c, _slots[slot]);
-        }            
+        }
         slot++;
     }
 
     _cards.push_front(std::move(card));
+    _cards.front().parent = this;
+    children.push_back(&_cards.front());
+
     if (_config.addAnimDef) {
         _animator.add(_config.addAnimDef(_cards.front(), _slots[0]));
     }
-    else { 
+    else {
         applyAnchor(_cards.front(), _slots[0]);
     }
 }
@@ -33,7 +40,11 @@ CardUI LeftHandUI::removeCard(uint32_t id) {
     auto it          = findCard(id);
     int  removedSlot = static_cast<int>(std::distance(_cards.begin(), it));
 
+    auto childIt = std::find(children.begin(), children.end(), &*it);
+    if (childIt != children.end()) children.erase(childIt);
+
     CardUI card = std::move(*it);
+    card.parent = nullptr;
     _cards.erase(it);
 
     int slot = removedSlot;
@@ -85,9 +96,9 @@ float LeftHandUI::slotT(int slot) const {
 Vector2 LeftHandUI::slotPosition(int slot) const {
     float   t  = slotT(slot);
     float   u  = 1.0f - t;
-    Vector2 p0 = {position.x + _config.arcStartOffset.x, position.y + _config.arcStartOffset.y};
-    Vector2 p1 = {position.x + _config.controlOffset.x,  position.y + _config.controlOffset.y};
-    Vector2 p2 = {position.x + _config.arcEndOffset.x,   position.y + _config.arcEndOffset.y};
+    Vector2 p0 = {_config.arcStartOffset.x, _config.arcStartOffset.y};
+    Vector2 p1 = {_config.controlOffset.x,  _config.controlOffset.y};
+    Vector2 p2 = {_config.arcEndOffset.x,   _config.arcEndOffset.y};
     return {
         u*u*p0.x + 2.0f*u*t*p1.x + t*t*p2.x,
         u*u*p0.y + 2.0f*u*t*p1.y + t*t*p2.y
@@ -97,9 +108,9 @@ Vector2 LeftHandUI::slotPosition(int slot) const {
 float LeftHandUI::slotRotation(int slot) const {
     float   t  = slotT(slot);
     float   u  = 1.0f - t;
-    Vector2 p0 = {position.x + _config.arcStartOffset.x, position.y + _config.arcStartOffset.y};
-    Vector2 p1 = {position.x + _config.controlOffset.x,  position.y + _config.controlOffset.y};
-    Vector2 p2 = {position.x + _config.arcEndOffset.x,   position.y + _config.arcEndOffset.y};
+    Vector2 p0 = {_config.arcStartOffset.x, _config.arcStartOffset.y};
+    Vector2 p1 = {_config.controlOffset.x,  _config.controlOffset.y};
+    Vector2 p2 = {_config.arcEndOffset.x,   _config.arcEndOffset.y};
     float dx = 2.0f*u*(p1.x - p0.x) + 2.0f*t*(p2.x - p1.x);
     float dy = 2.0f*u*(p1.y - p0.y) + 2.0f*t*(p2.y - p1.y);
     return atan2f(dy, dx) * RAD2DEG;

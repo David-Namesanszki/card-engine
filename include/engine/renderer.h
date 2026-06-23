@@ -28,9 +28,12 @@ public:
     void          destroy(uint32_t id);
     RenderObject& get(uint32_t id);
     void          draw(const std::vector<const RenderObject*>& extras = {});
+    void          render(RenderObject& obj);
     const BattleLayout& getLayout() const { return _layout; }
 private:
-    void drawObject(const RenderObject& obj);
+    void    drawObject(const RenderObject& obj, Vector2 worldPos);
+    void    renderNode(const RenderObject& obj, Vector2 parentWorldPos);
+    Vector2 worldPosition(const RenderObject& obj) const;
     std::vector<const RenderObject*> sorted(const std::vector<const RenderObject*>& extras) const;
     BattleLayout _layout;
     uint32_t     _nextId = 1;

@@ -7,7 +7,7 @@
 #include "UI/drawPileUI.h"
 #include "UI/configs/battleUIConfig.h"
 
-class BattleUI : public RenderObject {
+class BattleUI {
 public:
     BattleUI(
         const BattleUIConfig& config,
@@ -20,6 +20,8 @@ public:
     void discardFromRightHand(uint32_t card);
 
 private:
+    RenderObject _ro;
+
     BattleUIConfig _config;
     DiscardPileUI _discardPile;
     DrawPileUI _drawPile;

@@ -1,5 +1,13 @@
 #include "UI/battleUI.h"
 
+BattleUI::BattleUI(
+    const BattleUIConfig& config,
+    const LeftHandUIConfig& leftHandConfig,
+    const RightHandUIConfig& rightHandConfig,
+    const DiscardPileUIConfig& discardPileConfig,
+    const DrawPileUIConfig& drawPileConfig) {
+}
+
 void BattleUI::drawCard(uint32_t cardId) {
     CardUI c(cardId);
     const AnchorPoint& drawPoint = _drawPile.getDrawPoint();

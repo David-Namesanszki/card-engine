@@ -2,15 +2,17 @@
 
 #include "raylib.h"
 #include <string>
+#include <vector>
 
 struct RenderObject {
-    std::string texture;
-    std::string text;
-    Vector2     position = {0, 0};
-    Vector2     size     = {80, 110};
-    float       rotation = 0.0f;
-    float       scale    = 1.0f;
-    Color       color    = WHITE;
-    int         layer    = 0;
-    bool        visible  = true;
+    std::string   texture;
+    std::string   text;
+    Color         color    = WHITE;
+    int           layer    = 0;
+    bool          visible  = true;
+    
+    RenderObject*              parent   = nullptr;
+    std::vector<RenderObject*> children;
+
+    void addObject(const RenderObject* object);
 };

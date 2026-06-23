@@ -14,7 +14,11 @@ class LeftHandUI : public RenderObject {
 public:
     LeftHandUI(Animator& animator, Vector2 position, LeftHandUIConfig config = {});
 
-    void   addCard(CardUI card);
+    void addCard(
+        CardUI cardObject, 
+        TransformObject cardTransform,
+        RenderObject cardRenderObject,
+        HitBoxObject cardHitboxObject);
     CardUI removeCard(uint32_t id);
 
     const std::vector<AnchorPoint>& slots() const { return _slots; }
@@ -33,4 +37,8 @@ private:
     LeftHandUIConfig         _config;
     std::vector<AnchorPoint> _slots;
     std::list<CardUI>        _cards;
+
+    TransformObject _transform;
+    RenderObject _render;
+    HitBoxObject _hitbox;
 };
