@@ -25,6 +25,7 @@ struct Animation {
 class Animator {
 public:
     void add(Animation anim);
+    void cancel(uint32_t tag);
     void update(float dt);
     int  activeCount() const { return static_cast<int>(_animations.size()); }
 private:

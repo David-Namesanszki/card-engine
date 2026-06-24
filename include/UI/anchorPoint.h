@@ -1,10 +1,8 @@
 #pragma once
 
 #include "raylib.h"
+#include "engine/transformComponent.h"
 
 struct AnchorPoint {
-    Vector2 position  = {0, 0};
-    float   rotation  = 0.0f;
-    float   scale     = 1.0f;
-    Color   colorTint = WHITE;
+    TransformComponent transform;
 };

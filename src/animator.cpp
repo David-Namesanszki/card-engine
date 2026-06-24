@@ -11,6 +11,16 @@ void Animator::add(Animation anim) {
     _animations.push_back(std::move(anim));
 }
 
+void Animator::cancel(uint32_t tag) {
+    if (tag == 0)
+        return;
+    _animations.erase(
+        std::remove_if(_animations.begin(), _animations.end(),
+            [tag](const Animation& a) { return a.tag == tag; }),
+        _animations.end()
+    );
+}
+
 void Animator::update(float dt) {
     for (auto& anim : _animations) {
         if (anim.delay > 0.0f) { anim.delay -= dt; continue; }

@@ -1,32 +1,40 @@
 #pragma once
 
-#include "engine/renderObject.h"
+#include "engine/animator.h"
 #include "UI/rightHandUI.h"
 #include "UI/leftHandUI.h"
 #include "UI/discardPileUI.h"
 #include "UI/drawPileUI.h"
 #include "UI/configs/battleUIConfig.h"
+#include <list>
 
 class BattleUI {
-public:
+  public:
     BattleUI(
-        const BattleUIConfig& config,
-        const LeftHandUIConfig& leftHandConfig,
-        const RightHandUIConfig& rightHandConfig,
-        const DiscardPileUIConfig& discardPileConfig,
-        const DrawPileUIConfig& drawPileConfig);
-    void drawCard(uint32_t card);
-    void discardFromLeftHand(uint32_t card);
-    void discardFromRightHand(uint32_t card);
+        Animator& animator,
+        BattleUIConfig config = {},
+        LeftHandUIConfig leftHandConfig = {},
+        RightHandUIConfig rightHandConfig = {},
+        DiscardPileUIConfig discardPileConfig = {},
+        DrawPileUIConfig drawPileConfig = {});
 
-private:
-    RenderObject _ro;
+    void drawCard();
+    void discardFromLeftHand(uint32_t cardId);
+    void discardFromRightHand(uint32_t cardId);
+    void reshuffleDiscardIntoDraw();
+    void draw() const;
 
+  private:
+    // A single flourish representing the discard sweeping back into the deck.
+    void playReshuffleEffect(Vector2 from, Vector2 to);
+
+    Animator& _animator;
     BattleUIConfig _config;
-    DiscardPileUI _discardPile;
     DrawPileUI _drawPile;
+    DiscardPileUI _discardPile;
     LeftHandUI _leftHand;
     RightHandUI _rightHand;
 
-    Animator& _animator;
+    // Transient visuals owned by BattleUI; live only while their animation runs.
+    std::list<TransformComponent> _reshuffleGhosts;
 };

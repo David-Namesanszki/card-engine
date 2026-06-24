@@ -1,12 +1,31 @@
 #pragma once
+
+#include "engine/animator.h"
+#include "engine/easing.h"
+#include "engine/hitBoxComponent.h"
+#include "engine/spriteComponent.h"
+#include "engine/transformComponent.h"
 #include "UI/anchorPoint.h"
+#include <functional>
 
 struct DiscardPileUIConfig {
-    // RenderObject visual properties
-    Vector2 position = {500.0f,   0.0f};
-    Vector2 size     = {400.0f, 150.0f};
-    Color   color    = {30, 30, 50, 200};
-    int     layer    = 0;
+    HitBoxComponent hitBox;
+    SpriteComponent sprite;
+    TransformComponent transform;
+    AnchorPoint discardPoint = {};
 
-    AnchorPoint discardPoint = {{0, 0}, 0.0f, 1.0f};
+    std::function<Animation(TransformComponent&, const AnchorPoint&)> receiveAnimDef =
+        [](TransformComponent& card, const AnchorPoint& target) {
+            Vector2 wp = target.transform.worldPosition();
+            Animation anim;
+            anim.duration = 0.3f;
+            anim.easing   = Easing::easeIn;
+            anim.channels = {
+                {card.position.x, wp.x,                      [&card](float v){ card.position.x = v; }},
+                {card.position.y, wp.y,                      [&card](float v){ card.position.y = v; }},
+                {card.rotation,   target.transform.rotation, [&card](float v){ card.rotation   = v; }},
+                {card.scale,      0.5f,                      [&card](float v){ card.scale      = v; }},
+            };
+            return anim;
+        };
 };

@@ -1,21 +1,22 @@
 #pragma once
 
-#include "engine/renderObject.h"
 #include <cstdint>
-#include "transformObject.h"
-#include "renderObject.h"
-#include "hitBoxObject.h"
+#include "engine/transformComponent.h"
+#include "engine/spriteComponent.h"
+#include "engine/hitBoxComponent.h"
 
-class CardUI : public RenderObject {
-public:
-    explicit CardUI(uint32_t id) : _id(id) {}
-    uint32_t id() const { return _id; }
-    const TransformObject& getTransform() const;
-    const RenderObject& getRender() const;
-    const HitBoxObject& getHitBox() const;
-private:
+class CardUI {
+  public:
+    explicit CardUI(uint32_t id) : _id(id) {
+    }
+    uint32_t id() const {
+        return _id;
+    }
+
+    TransformComponent transform;
+    SpriteComponent sprite;
+    HitBoxComponent hitbox;
+
+  private:
     uint32_t _id;
-    TransformObject _transform;
-    RenderObject _render;
-    HitBoxObject _hitbox;
 };
