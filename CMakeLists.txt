@@ -19,3 +19,30 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(card-engine ${SOURCES})
 target_link_libraries(card-engine raylib)
+
+# ---- Tests ----
+option(BUILD_TESTING "Build unit tests" ON)
+if(BUILD_TESTING)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+        GIT_SHALLOW TRUE
+    )
+    # Prevent GoogleTest from overriding parent project's compiler/linker settings on Windows.
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    enable_testing()
+
+    add_executable(card-engine-tests
+        tests/hitBoxComponentTest.cpp
+        tests/transformComponentTest.cpp
+        src/engine/hitBoxComponent.cpp
+        src/engine/transformComponent.cpp
+    )
+    target_link_libraries(card-engine-tests PRIVATE raylib GTest::gtest_main)
+
+    include(GoogleTest)
+    gtest_discover_tests(card-engine-tests)
+endif()

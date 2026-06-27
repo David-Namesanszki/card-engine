@@ -28,6 +28,25 @@
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": [],
             "dependsOn": "CMake Build"
+        },
+        {
+            "label": "Build Tests",
+            "type": "shell",
+            "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
+            "args": ["--build", "build", "--target", "card-engine-tests"],
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": "$msCompile",
+            "dependsOn": "CMake Configure"
+        },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": ".\\build\\Debug\\card-engine-tests.exe",
+            "group": "test",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": [],
+            "dependsOn": "Build Tests"
         }
     ]
 }
