@@ -1,10 +1,15 @@
 #pragma once
 
 #include "raylib.h"
+#include "engine/transformComponent.h"
+#include <vector>
 
 struct HitBoxComponent {
-    Vector2 position = {0, 0};
-    Vector2 size = {80, 110};
-    float rotation = 0.0f;
-    int layer = 0;
+    Vector2 position;            // offset in the entity's local space
+    std::vector<Vector2> points; // polygon vertices, relative to `position`
+    int layer;
+
+    // Tests `point` (world space) against the polygon, accounting for the
+    // entity's world position, rotation and scale supplied by `xf`.
+    bool isInside(const Vector2& point, const TransformComponent& xf) const;
 };
