@@ -1,13 +1,14 @@
 #pragma once
 
 #include <cstdint>
-#include "engine/transformComponent.h"
-#include "engine/spriteComponent.h"
-#include "engine/hitBoxComponent.h"
+#include "engine/components/transformComponent.h"
+#include "engine/components/spriteComponent.h"
+#include "engine/components/hitBoxComponent.h"
 
 class CardUI {
   public:
-    explicit CardUI(uint32_t id) : _id(id) {
+    explicit CardUI(uint32_t id)
+        : _id(id) {
     }
     uint32_t id() const {
         return _id;

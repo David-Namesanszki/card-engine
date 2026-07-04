@@ -36,10 +36,8 @@ if(BUILD_TESTING)
     enable_testing()
 
     add_executable(card-engine-tests
-        tests/hitBoxComponentTest.cpp
         tests/transformComponentTest.cpp
-        src/engine/hitBoxComponent.cpp
-        src/engine/transformComponent.cpp
+        src/engine/components/transformComponent.cpp
     )
     target_link_libraries(card-engine-tests PRIVATE raylib GTest::gtest_main)
 

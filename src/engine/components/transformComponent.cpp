@@ -1,4 +1,4 @@
-#include "engine/transformComponent.h"
+#include "engine/components/transformComponent.h"
 #include <algorithm>
 
 void TransformComponent::addChild(TransformComponent* child) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "raylib.h"
-#include "engine/transformComponent.h"
+#include "engine/components/transformComponent.h"
 
 struct AnchorPoint {
     TransformComponent transform;

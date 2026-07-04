@@ -1,5 +1,5 @@
-#include "engine/hitBoxComponent.h"
-#include "engine/transformComponent.h"
+#include "engine/components/hitBoxComponent.h"
+#include "engine/components/transformComponent.h"
 #include <gtest/gtest.h>
 
 namespace {

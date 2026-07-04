@@ -1,8 +1,8 @@
 #pragma once
 #include "UI/anchorPoint.h"
-#include "engine/transformComponent.h"
-#include "engine/spriteComponent.h"
-#include "engine/hitBoxComponent.h"
+#include "engine/components/transformComponent.h"
+#include "engine/components/spriteComponent.h"
+#include "engine/components/hitBoxComponent.h"
 
 struct CardPileUIConfig {
     HitBoxComponent hitBox;

@@ -1,4 +1,4 @@
-#include "engine/transformComponent.h"
+#include "engine/components/transformComponent.h"
 #include <gtest/gtest.h>
 
 namespace {

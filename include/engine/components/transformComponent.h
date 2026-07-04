@@ -33,6 +33,17 @@ struct TransformComponent {
         return {pw.x + rotated.x, pw.y + rotated.y};
     }
 
+    // Flattens this transform's world position/rotation/scale into a standalone,
+    // parentless transform. Use this instead of copying the whole struct when you
+    // want the world values without inheriting the parent/children hierarchy.
+    TransformComponent asWorldTransform() const {
+        TransformComponent t;
+        t.position = worldPosition();
+        t.rotation = worldRotation();
+        t.scale = worldScale();
+        return t; // parent = nullptr, children = {} by default
+    }
+
     void addChild(TransformComponent* child);
     void removeChild(TransformComponent* child);
 
