@@ -22,7 +22,7 @@ struct Animation {
     std::function<void()> onComplete = nullptr;
 };
 
-class Animator {
+class AnimationSystem {
 public:
     void add(Animation anim);
     void cancel(uint32_t tag);

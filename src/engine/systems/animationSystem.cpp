@@ -1,7 +1,7 @@
-#include "engine/animator.h"
+#include "engine/systems/animationSystem.h"
 #include <algorithm>
 
-void Animator::add(Animation anim) {
+void AnimationSystem::add(Animation anim) {
     if (anim.tag != 0)
         _animations.erase(
             std::remove_if(_animations.begin(), _animations.end(),
@@ -11,7 +11,7 @@ void Animator::add(Animation anim) {
     _animations.push_back(std::move(anim));
 }
 
-void Animator::cancel(uint32_t tag) {
+void AnimationSystem::cancel(uint32_t tag) {
     if (tag == 0)
         return;
     _animations.erase(
@@ -21,7 +21,7 @@ void Animator::cancel(uint32_t tag) {
     );
 }
 
-void Animator::update(float dt) {
+void AnimationSystem::update(float dt) {
     for (auto& anim : _animations) {
         if (anim.delay > 0.0f) { anim.delay -= dt; continue; }
         anim.elapsed += dt;

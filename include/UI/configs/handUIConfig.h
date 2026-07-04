@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/easing.h"
-#include "engine/animator.h"
+#include "engine/systems/animationSystem.h"
 #include "UI/anchorPoint.h"
 #include "UI/cardUI.h"
 #include "raylib.h"

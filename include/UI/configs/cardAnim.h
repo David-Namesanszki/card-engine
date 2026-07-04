@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/animator.h"  // EasingFn
+#include "engine/systems/animationSystem.h"  // EasingFn
 #include "engine/easing.h"
 
 // Pure data describing how a single card travels from its current transform to a
