@@ -1,10 +1,12 @@
-#include "UI/hands/fixedSlotHandUI.h"
+#include "UI/fixedSlotHandUI.h"
 #include <algorithm>
 #include <cmath>
 #include <iterator>
 
 FixedSlotHandUI::FixedSlotHandUI(HandUIConfig config) : _config(config) {
     transform = config.transform;
+    sprite = config.sprite;
+    hitbox.setRectangle(sprite.size);
 
     _slots.resize(_config.slotCount);
     for (int i = 0; i < _config.slotCount; i++) {
@@ -24,7 +26,9 @@ void FixedSlotHandUI::addCardId(uint32_t cardId, size_t index) {
 }
 
 void FixedSlotHandUI::removeCardId(uint32_t cardId) {
-    std::find(_cardIds.begin(), _cardIds.end(), [cardId](uint32_t card) { return card == cardId; });
+    auto it = std::find(_cardIds.begin(), _cardIds.end(), cardId);
+    if (it != _cardIds.end())
+        _cardIds.erase(it);
 }
 
 const AnchorPoint& FixedSlotHandUI::getPosition(size_t index) const {

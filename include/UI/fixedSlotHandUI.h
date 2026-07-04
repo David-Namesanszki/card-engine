@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/animator.h"
+#include "engine/systems/animationSystem.h"
 #include "UI/configs/handUIConfig.h"
 #include "UI/anchorPoint.h"
 #include "UI/cardUI.h"
@@ -16,9 +16,13 @@ class FixedSlotHandUI {
     void addCardId(uint32_t cardId, size_t index);
     void removeCardId(uint32_t cardId);
     const AnchorPoint& getPosition(size_t index) const;
+    size_t slotCount() const {
+        return _slots.size();
+    }
 
     TransformComponent transform;
     SpriteComponent sprite;
+    HitBoxComponent hitbox;
 
   private:
     float slotT(int slot) const;
