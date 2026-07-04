@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "types/handType.h"
+#include "core/types/handType.h"
 
 struct CardDiscardedEvent {
     uint32_t cardId;
