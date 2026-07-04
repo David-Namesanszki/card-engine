@@ -1,19 +1,22 @@
 #pragma once
 
-#include "engine/hitBoxComponent.h"
-#include "engine/spriteComponent.h"
-#include "engine/transformComponent.h"
+#include "engine/components/hitBoxComponent.h"
+#include "engine/components/spriteComponent.h"
+#include "engine/components/transformComponent.h"
 #include "UI/anchorPoint.h"
+#include "UI/textUI.h"
 #include "UI/configs/cardPileUIConfig.h"
 
 class CardPileUI {
   public:
     CardPileUI(CardPileUIConfig config = {});
 
+    void setCount(int count);
+
     SpriteComponent sprite;
     TransformComponent transform;
     HitBoxComponent hitbox;
-    int count;
+    TextUI countText;
 
     const AnchorPoint& getAnchorPoint() const;
 
