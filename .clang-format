@@ -17,3 +17,4 @@ AllowAllParametersOfDeclarationOnNextLine: false
 BinPackArguments: false
 AlwaysBreakAfterReturnType: None
 PenaltyReturnTypeOnItsOwnLine: 10000
+PackConstructorInitializers: Never

@@ -1,50 +1,53 @@
 {
     "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}"
+    },
     "tasks": [
         {
-            "label": "CMake Configure",
+            "label": "Configure",
             "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
-            "args": ["-S", ".", "-B", "build"],
+            "command": "cmake",
+            "args": ["-S", ".", "-B", "build", "-G", "Visual Studio 17 2022"],
             "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
             "problemMatcher": []
         },
         {
-            "label": "CMake Build",
+            "label": "Build",
             "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
-            "args": ["--build", "build"],
+            "command": "cmake",
+            "args": ["--build", "build", "--config", "Debug", "--target", "card-engine"],
             "group": { "kind": "build", "isDefault": true },
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": "$msCompile",
-            "dependsOn": "CMake Configure"
+            "dependsOn": "Configure"
         },
         {
             "label": "Run",
             "type": "shell",
-            "command": ".\\build\\Debug\\card-engine.exe",
-            "group": { "kind": "test", "isDefault": true },
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "command": "${workspaceFolder}/build/Debug/card-engine.exe",
+            "group": "test",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
             "problemMatcher": [],
-            "dependsOn": "CMake Build"
+            "dependsOn": "Build"
         },
         {
             "label": "Build Tests",
             "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
-            "args": ["--build", "build", "--target", "card-engine-tests"],
+            "command": "cmake",
+            "args": ["--build", "build", "--config", "Debug", "--target", "card-engine-tests"],
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": "$msCompile",
-            "dependsOn": "CMake Configure"
+            "dependsOn": "Configure"
         },
         {
             "label": "Run Tests",
             "type": "shell",
-            "command": ".\\build\\Debug\\card-engine-tests.exe",
-            "group": "test",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "command": "${workspaceFolder}/build/Debug/card-engine-tests.exe",
+            "group": { "kind": "test", "isDefault": true },
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
             "problemMatcher": [],
             "dependsOn": "Build Tests"
         }
