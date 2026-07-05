@@ -9,8 +9,20 @@
 
 class UnitUI {
   public:
+    // Stat texts are left unparented (unlike the panels) because UnitUI gets
+    // copied in and out of containers, and a transform parented to this
+    // object's own transform would dangle in the copy. Whoever places a unit
+    // on the board must position the texts/pips in world space alongside it.
     explicit UnitUI(uint32_t id)
         : _id(id) {
+        healthText.text.text = "10";
+        attackPowerText.text.text = "2";
+        defensivePowerText.text.text = "1";
+
+        healthPip.sprite.texture = "assets/pips/health_pip.png";
+        healthPip.sprite.size = {24.0f, 24.0f};
+        attackPowerPip.sprite.size = {24.0f, 24.0f}; // no art yet
+        defensivePowerPip.sprite.size = {24.0f, 24.0f}; // no art yet
     }
     uint32_t id() const {
         return _id;

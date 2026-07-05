@@ -55,72 +55,105 @@ void RenderSystem::draw(const TransformComponent& transform, const SpriteCompone
 
 void RenderSystem::renderBattle(const BattleUI& battle) {
     // Backgrounds first, then cards on top.
-    draw(battle.board().transform, battle.board().sprite);
-    for (const auto& tile : battle.board().tiles())
-        draw(tile.transform, tile.sprite);
+    renderBoard(battle.board());
 
-    const CaptainUI& captain = battle.captain();
-    draw(captain.transform, captain.sprite);
-    draw(captain.healthPip.transform, captain.healthPip.sprite);
+    renderCaptain(battle.captain());
+    for (const auto& unit : battle.units())
+        renderUnit(unit);
 
-    for (const auto& unit : battle.units()) {
-        draw(unit.transform, unit.sprite);
-        draw(unit.healthPip.transform, unit.healthPip.sprite);
-        draw(unit.attackPowerPip.transform, unit.attackPowerPip.sprite);
-        draw(unit.defensivePowerPip.transform, unit.defensivePowerPip.sprite);
-    }
-
-    draw(battle.drawPile().transform, battle.drawPile().sprite);
-    draw(battle.discardPile().transform, battle.discardPile().sprite);
-    draw(battle.leftHand().transform, battle.leftHand().sprite);
-    draw(battle.rightHand().transform, battle.rightHand().sprite);
+    renderCardPile(battle.drawPile());
+    renderCardPile(battle.discardPile());
+    renderHand(battle.leftHand());
+    renderHand(battle.rightHand());
 
     for (const auto& card : battle.cards())
-        draw(card.transform, card.sprite);
+        renderCard(card);
 
-    draw(battle.firePanel().transform, battle.firePanel().background);
+    renderResourcePanel(battle.firePanel());
+    renderActionPointsPanel(battle.actionPointsPanel());
+    renderProgressPanel(battle.progressPanel());
+    renderBattleInfoPanel(battle.battleInfoPanel());
 
-    draw(battle.actionPointsPanel().transform, battle.actionPointsPanel().sprite);
-    for (const auto& pip : battle.actionPointsPanel().pips())
-        draw(pip.transform, pip.sprite);
+    renderButton(battle.endTurnButton());
+}
 
-    const ProgressPanelUI& progress = battle.progressPanel();
-    draw(progress.transform, progress.background);
-    draw(progress.daysPip.transform, progress.daysPip.sprite);
-    draw(progress.raidSectionPip.transform, progress.raidSectionPip.sprite);
-    draw(progress.barkOrePip.transform, progress.barkOrePip.sprite);
-    draw(progress.bloodSapPip.transform, progress.bloodSapPip.sprite);
-    draw(progress.heartWoodPip.transform, progress.heartWoodPip.sprite);
+void RenderSystem::renderBoard(const BoardUI& board) {
+    draw(board.transform, board.sprite);
+    for (const auto& tile : board.tiles())
+        draw(tile.transform, tile.sprite);
+}
 
-    const BattleInfoPanelUI& info = battle.battleInfoPanel();
-    draw(info.transform, info.background);
-    draw(info.difficultyPip.transform, info.difficultyPip.sprite);
-    draw(info.whoseTurnPip.transform, info.whoseTurnPip.sprite);
-    draw(info.battleLengthPip.transform, info.battleLengthPip.sprite);
-
-    draw(battle.endTurnButton().transform, battle.endTurnButton().sprite);
-
-    drawText(battle.drawPile().countText.transform, battle.drawPile().countText.text);
-    drawText(battle.discardPile().countText.transform, battle.discardPile().countText.text);
-    drawText(battle.firePanel().fireCountText.transform, battle.firePanel().fireCountText.text);
-
-    drawText(progress.currentDaysText.transform, progress.currentDaysText.text);
-    drawText(progress.maxDaysText.transform, progress.maxDaysText.text);
-    drawText(progress.raidSectionCountText.transform, progress.raidSectionCountText.text);
-    drawText(progress.barkOreCountText.transform, progress.barkOreCountText.text);
-    drawText(progress.bloodSapCountText.transform, progress.bloodSapCountText.text);
-    drawText(progress.heartWoodCountText.transform, progress.heartWoodCountText.text);
-
-    drawText(info.difficultyText.transform, info.difficultyText.text);
-    drawText(info.whoseTurnText.transform, info.whoseTurnText.text);
-    drawText(info.battleLengthText.transform, info.battleLengthText.text);
-
+void RenderSystem::renderCaptain(const CaptainUI& captain) {
+    draw(captain.transform, captain.sprite);
+    draw(captain.healthPip.transform, captain.healthPip.sprite);
     drawText(captain.healthText.transform, captain.healthText.text);
-    for (const auto& unit : battle.units()) {
-        drawText(unit.healthText.transform, unit.healthText.text);
-        drawText(unit.attackPowerText.transform, unit.attackPowerText.text);
-        drawText(unit.defensivePowerText.transform, unit.defensivePowerText.text);
-    }
+}
+
+void RenderSystem::renderUnit(const UnitUI& unit) {
+    draw(unit.transform, unit.sprite);
+    draw(unit.healthPip.transform, unit.healthPip.sprite);
+    draw(unit.attackPowerPip.transform, unit.attackPowerPip.sprite);
+    draw(unit.defensivePowerPip.transform, unit.defensivePowerPip.sprite);
+
+    drawText(unit.healthText.transform, unit.healthText.text);
+    drawText(unit.attackPowerText.transform, unit.attackPowerText.text);
+    drawText(unit.defensivePowerText.transform, unit.defensivePowerText.text);
+}
+
+void RenderSystem::renderCardPile(const CardPileUI& cardPile) {
+    draw(cardPile.transform, cardPile.sprite);
+    drawText(cardPile.countText.transform, cardPile.countText.text);
+}
+
+void RenderSystem::renderHand(const FixedSlotHandUI& hand) {
+    draw(hand.transform, hand.sprite);
+}
+
+void RenderSystem::renderCard(const CardUI& card) {
+    draw(card.transform, card.sprite);
+}
+
+void RenderSystem::renderButton(const ButtonUI& button) {
+    draw(button.transform, button.sprite);
+}
+
+void RenderSystem::renderResourcePanel(const FireResourcePanelUI& resourcePanel) {
+    draw(resourcePanel.transform, resourcePanel.background);
+    draw(resourcePanel.firePip.transform, resourcePanel.firePip.sprite);
+    drawText(resourcePanel.fireCountText.transform, resourcePanel.fireCountText.text);
+}
+
+void RenderSystem::renderActionPointsPanel(const ActionPointsPanelUI& actionPanel) {
+    draw(actionPanel.transform, actionPanel.sprite);
+    for (const auto& pip : actionPanel.pips())
+        draw(pip.transform, pip.sprite);
+}
+
+void RenderSystem::renderProgressPanel(const ProgressPanelUI& progressPanel) {
+    draw(progressPanel.transform, progressPanel.background);
+    draw(progressPanel.daysPip.transform, progressPanel.daysPip.sprite);
+    draw(progressPanel.raidSectionPip.transform, progressPanel.raidSectionPip.sprite);
+    draw(progressPanel.barkOrePip.transform, progressPanel.barkOrePip.sprite);
+    draw(progressPanel.bloodSapPip.transform, progressPanel.bloodSapPip.sprite);
+    draw(progressPanel.heartWoodPip.transform, progressPanel.heartWoodPip.sprite);
+
+    drawText(progressPanel.currentDaysText.transform, progressPanel.currentDaysText.text);
+    drawText(progressPanel.maxDaysText.transform, progressPanel.maxDaysText.text);
+    drawText(progressPanel.raidSectionCountText.transform, progressPanel.raidSectionCountText.text);
+    drawText(progressPanel.barkOreCountText.transform, progressPanel.barkOreCountText.text);
+    drawText(progressPanel.bloodSapCountText.transform, progressPanel.bloodSapCountText.text);
+    drawText(progressPanel.heartWoodCountText.transform, progressPanel.heartWoodCountText.text);
+}
+
+void RenderSystem::renderBattleInfoPanel(const BattleInfoPanelUI& battleInfoPanel) {
+    draw(battleInfoPanel.transform, battleInfoPanel.background);
+    draw(battleInfoPanel.difficultyPip.transform, battleInfoPanel.difficultyPip.sprite);
+    draw(battleInfoPanel.whoseTurnPip.transform, battleInfoPanel.whoseTurnPip.sprite);
+    draw(battleInfoPanel.battleLengthPip.transform, battleInfoPanel.battleLengthPip.sprite);
+
+    drawText(battleInfoPanel.difficultyText.transform, battleInfoPanel.difficultyText.text);
+    drawText(battleInfoPanel.whoseTurnText.transform, battleInfoPanel.whoseTurnText.text);
+    drawText(battleInfoPanel.battleLengthText.transform, battleInfoPanel.battleLengthText.text);
 }
 
 void RenderSystem::renderTargetOverlay(

@@ -31,5 +31,18 @@ class RenderSystem {
     // Draws a sprite using its transform's world position/rotation/scale.
     void draw(const TransformComponent& transform, const SpriteComponent& sprite);
     void drawText(const TransformComponent& transform, const TextComponent& textComponent);
+
+    void renderCardPile(const CardPileUI& cardPile);
+    void renderHand(const FixedSlotHandUI& hand);
+    void renderBoard(const BoardUI& board);
+    void renderCard(const CardUI& card);
+    void renderResourcePanel(const FireResourcePanelUI& resourcePanel);
+    void renderActionPointsPanel(const ActionPointsPanelUI& actionPanel);
+    void renderProgressPanel(const ProgressPanelUI& progressPanel);
+    void renderBattleInfoPanel(const BattleInfoPanelUI& battleInfoPanel);
+    void renderButton(const ButtonUI& button);
+    void renderCaptain(const CaptainUI& captain);
+    void renderUnit(const UnitUI& unit);
+
     std::unordered_map<std::string, Texture2D> _textures;
 };

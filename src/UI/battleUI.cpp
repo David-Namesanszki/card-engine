@@ -8,6 +8,7 @@
 BattleUI::BattleUI(
     BattleUIConfig config,
     BoardUIConfig boardConfig,
+    CaptainUIConfig captainConfig,
     FireResourcePanelUIConfig firePanelConfig,
     ActionPointsPanelUIConfig actionPointsConfig,
     ProgressPanelUIConfig progressPanelConfig,
@@ -20,6 +21,7 @@ BattleUI::BattleUI(
 )
     : _config(config),
       _board(boardConfig),
+      _captain(captainConfig),
       _drawPile(drawPileConfig),
       _discardPile(discardPileConfig),
       _leftHand(leftHandConfig),
@@ -44,6 +46,22 @@ void BattleUI::setFireCount(int fireCount) {
 
 void BattleUI::setActionPointsSpent(int spentCount) {
     _actionPointsPanel.setSpent(spentCount);
+}
+
+void BattleUI::setDifficulty(const std::string& difficulty) {
+    _battleInfoPanel.setDifficulty(difficulty);
+}
+
+void BattleUI::setWhoseTurn(const std::string& whoseTurn) {
+    _battleInfoPanel.setWhoseTurn(whoseTurn);
+}
+
+void BattleUI::setBattleLength(int battleLength) {
+    _battleInfoPanel.setBattleLength(battleLength);
+}
+
+void BattleUI::setCaptainHealth(int current, int max) {
+    _captain.setHealth(current, max);
 }
 
 void BattleUI::transferCardToRight(uint32_t cardId) {

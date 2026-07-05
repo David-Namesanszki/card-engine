@@ -8,14 +8,24 @@
 #include "core/events/cardTransferredToRightEvent.h"
 #include "core/events/cardDiscardedEvent.h"
 #include "core/events/drawPileRefilledEvent.h"
+#include "core/events/battleInfoChangedEvent.h"
+#include "core/events/actionPointsChangedEvent.h"
 #include "core/captain.h"
 #include "core/targetReq.h"
 #include "engine/result.h"
 #include "core/cardPlayError.h"
+#include "core/battleInfo.h"
+#include "core/actionPoints.h"
 
 class Battle {
   public:
-    Battle(Captain& captain, int firePoints, const CardPile& deck);
+    Battle(
+        Captain& captain,
+        int firePoints,
+        const CardPile& deck,
+        BattleDifficultyType difficulty,
+        int maxActionPoints
+    );
     void startPlayerTurn();
     void endPlayerTurn();
     void drawCard();
@@ -23,6 +33,9 @@ class Battle {
     void playCard(uint32_t cardId, std::vector<uint32_t> targets);
     void discardLeftHand();
     void discardRightHand();
+    void switchTurn();
+    void refillActionPoints();
+    void incrementTurnCounter();
 
     const CardPile& getDrawPile() const {
         return _drawPile;
@@ -35,6 +48,12 @@ class Battle {
     }
     const CardPile& getRightHand() const {
         return _rightHand;
+    }
+    const BattleInfo& getInfo() const {
+        return _info;
+    }
+    const ActionPoints& getActionPoints() const {
+        return _actionPoints;
     }
 
     void onCardDrawn(std::function<void(CardDrawnEvent)> cb) {
@@ -49,6 +68,12 @@ class Battle {
     void onDrawPileRefilled(std::function<void(DrawPileRefilledEvent)> cb) {
         _drawPileRefilledEventBus.subscribe(cb);
     }
+    void onBattleInfoChanged(std::function<void(BattleInfoChangedEvent)> cb) {
+        _battleInfoChangedEventBus.subscribe(cb);
+    }
+    void onActionPointsChanged(std::function<void(ActionPointsChangedEvent)> cb) {
+        _actionPointsChangedEventBus.subscribe(cb);
+    }
 
   private:
     Captain& _captain;
@@ -56,24 +81,14 @@ class Battle {
     CardPile _rightHand{5};
     CardPile _drawPile{-1};
     CardPile _discardPile{-1};
-    int _actionPoints = 0;
+    ActionPoints _actionPoints;
     int _firePoints;
+    BattleInfo _info;
 
     EventBus<CardDrawnEvent> _cardDrawnEventBus;
     EventBus<CardTransferredToRightEvent> _cardTransferredToRightEventBus;
     EventBus<CardDiscardedEvent> _cardDiscardedEventBus;
     EventBus<DrawPileRefilledEvent> _drawPileRefilledEventBus;
-
-    std::string _leftHandCardPlayAnimation;
-    std::string _rightHandCardPlayAnimation;
-    std::string _cardDrawAnimation;
-    std::string _cardTransferAnimation;
-    std::string _cardDiscardAnimation;
-    std::string _drawPileRefillAnimation;
-
-    std::string _leftHandCardPlaySound;
-    std::string _cardDrawSound;
-    std::string _cardTransferSound;
-    std::string _cardDiscardSound;
-    std::string _drawPileRefillSound;
+    EventBus<BattleInfoChangedEvent> _battleInfoChangedEventBus;
+    EventBus<ActionPointsChangedEvent> _actionPointsChangedEventBus;
 };

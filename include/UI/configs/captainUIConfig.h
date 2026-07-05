@@ -5,10 +5,10 @@
 #include "raylib.h"
 #include <string>
 
-struct FireResourcePanelUIConfig {
+struct CaptainUIConfig {
     TransformComponent transform;
-    SpriteComponent background;
+    SpriteComponent sprite;
 
     Vector2 pipSize = {24.0f, 24.0f};
-    std::string firePipTexture = "assets/pips/fire_resource_pip.png";
+    std::string healthPipTexture = "assets/pips/health_pip.png";
 };

@@ -3,6 +3,7 @@
 #include "engine/components/spriteComponent.h"
 #include "engine/components/transformComponent.h"
 #include "UI/textUI.h"
+#include "UI/panels/pip.h"
 #include "UI/configs/fireResourcePanelUIConfig.h"
 
 class FireResourcePanelUI {
@@ -14,5 +15,6 @@ class FireResourcePanelUI {
 
     void setFireCount(int fireCount);
 
+    Pip firePip;
     TextUI fireCountText;
 };

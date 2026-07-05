@@ -10,97 +10,134 @@
 #include "engine/systems/targetSystem.h"
 #include "core/battle.h"
 
+// Core speaks in enums; the info panel displays strings. The mapping lives on
+// the UI side of the boundary.
+static const char* turnTypeLabel(TurnType turnType) {
+    return turnType == TurnType::Player ? "Player" : "Enemy";
+}
+
+static const char* difficultyLabel(BattleDifficultyType difficulty) {
+    switch (difficulty) {
+    case BattleDifficultyType::Minor:
+        return "Minor";
+    case BattleDifficultyType::Major:
+        return "Major";
+    case BattleDifficultyType::Boss:
+        return "Boss";
+    }
+    return "Unknown";
+}
+
 int main() {
-    InitWindow(1280, 720, "Card Battle");
+    const float screenW = 1280.0f;
+    const float screenH = 720.0f;
+    InitWindow((int)screenW, (int)screenH, "Card Battle");
     SetTargetFPS(60);
 
     // ---- Configs ----
+    // Base battle layout. Each element owns a (width, height) fraction of the
+    // 1280x720 screen and is centred in its region; sprites stretch to fill it.
+    //
+    //   left column  (0.1 wide): BattleInfo 0.3 | BattleLog 0.3 | gap | DrawPile 0.2
+    //   centre       (0.8 wide): Board 0.7, then LeftHand 0.3 / Captain 0.2 / RightHand 0.3
+    //   right column (0.1 wide): ProgressPanel 0.3 | EndTurn 0.1 | FirePanel 0.1 +
+    //                            ActionPoints 0.1 | DiscardPile 0.2, with three even
+    //                            48px gaps between the four slots
     BattleUIConfig battleConfig;
 
-    // Fire resource panel: top-left corner.
-    FireResourcePanelUIConfig firePanelConfig;
-    firePanelConfig.transform.position = {120.0f, 40.0f};
-    firePanelConfig.background.texture = "assets/FirePanel.png";
-    firePanelConfig.background.size = {90.0f, 60.0f};
+    // Battle info panel: left column, top (0.1 x 0.3).
+    BattleInfoPanelUIConfig battleInfoPanelConfig;
+    battleInfoPanelConfig.transform.position = {64.0f, 108.0f};
+    battleInfoPanelConfig.background.texture = "assets/BattleInfoPanel.png";
+    battleInfoPanelConfig.background.size = {128.0f, 216.0f};
 
-    // Action points panel: straight line next to the fire panel.
+    // TODO: BattleLog (0.1 x 0.3) sits below BattleInfo in the layout, but no
+    // widget exists for it yet.
+
+    // Draw pile: left column, bottom (0.1 x 0.2).
+    CardPileUIConfig drawPileConfig;
+    drawPileConfig.transform.position = {64.0f, 648.0f};
+    drawPileConfig.sprite.texture = "assets/DrawPile.png";
+    drawPileConfig.sprite.size = {128.0f, 144.0f};
+
+    // Board: centre column, upper region (0.8 x 0.7).
+    BoardUIConfig boardConfig;
+    boardConfig.transform.position = {640.0f, 252.0f};
+
+    // Bottom row of the centre column (0.3 tall): left hand, captain, right hand.
+    // Cards sit on an arc spanning handPos.x +/- 200, with the middle slot
+    // pulled toward controlOffset.y.
+    HandUIConfig leftHandConfig;
+    leftHandConfig.transform.position = {320.0f, 612.0f}; // (0.3 x 0.3)
+    leftHandConfig.slotCount = 5;
+    leftHandConfig.sprite.texture = "assets/LeftHandCover.png";
+    leftHandConfig.sprite.size = {384.0f, 99.0f}; // region width, cover aspect (~520x134)
+
+    CaptainUIConfig captainConfig;
+    captainConfig.transform.position = {640.0f, 612.0f}; // (0.2 x 0.3)
+    captainConfig.sprite.texture = "assets/Captain.png";
+    captainConfig.sprite.size = {256.0f, 216.0f};
+
+    HandUIConfig rightHandConfig;
+    rightHandConfig.transform.position = {960.0f, 612.0f}; // (0.3 x 0.3)
+    rightHandConfig.slotCount = 5;
+    rightHandConfig.sprite.texture = "assets/RightHandCover.png";
+    rightHandConfig.sprite.size = {384.0f, 99.0f};
+
+    // Progress panel: right column, top (0.1 x 0.3).
+    ProgressPanelUIConfig progressPanelConfig;
+    progressPanelConfig.transform.position = {1216.0f, 108.0f};
+    progressPanelConfig.background.texture = "assets/ProgressPanel.png";
+    progressPanelConfig.background.size = {128.0f, 216.0f};
+
+    // End turn button: right column, second slot (0.1 x 0.1).
+    ButtonUIConfig endTurnButtonConfig;
+    endTurnButtonConfig.transform.position = {1216.0f, 300.0f};
+    endTurnButtonConfig.sprite.texture = "assets/EndTurnButton.png";
+    endTurnButtonConfig.sprite.size = {128.0f, 72.0f};
+
+    // The layout's BattleResourcePanel slot (0.1 x 0.2) is two stacked panels:
+    // fire resources on top, action points below, each 0.1 x 0.1.
+    FireResourcePanelUIConfig firePanelConfig;
+    firePanelConfig.transform.position = {1216.0f, 420.0f};
+    firePanelConfig.background.texture = "assets/FirePanel.png";
+    firePanelConfig.background.size = {128.0f, 72.0f};
+
+    const int maxActionPoints = 3;
+
     ActionPointsPanelUIConfig actionPointsConfig;
-    actionPointsConfig.transform.position = {320.0f, 40.0f};
+    actionPointsConfig.transform.position = {1216.0f, 492.0f};
     actionPointsConfig.background.texture = "assets/action_point_panel.png";
-    actionPointsConfig.background.size = {140.0f, 60.0f};
+    actionPointsConfig.background.size = {128.0f, 72.0f};
     actionPointsConfig.availableTexture = "assets/action_point.png";
     actionPointsConfig.spentTexture = "assets/action_point_spent.png";
-    actionPointsConfig.maxActionPoints = 3;
+    actionPointsConfig.maxActionPoints = maxActionPoints;
     actionPointsConfig.lineStartOffset = {-40.0f, 0.0f};
     actionPointsConfig.lineEndOffset = {40.0f, 0.0f};
     actionPointsConfig.pipSize = {24.0f, 24.0f};
 
-    // Progress panel: top-centre, tracking day/raid/resource counts.
-    ProgressPanelUIConfig progressPanelConfig;
-    progressPanelConfig.transform.position = {640.0f, 40.0f};
-    progressPanelConfig.background.texture = "assets/ProgressPanel.png";
-    progressPanelConfig.background.size = {300.0f, 60.0f};
-
-    // Battle info panel: top-right corner, tracking difficulty/turn/length.
-    BattleInfoPanelUIConfig battleInfoPanelConfig;
-    battleInfoPanelConfig.transform.position = {1100.0f, 40.0f};
-    battleInfoPanelConfig.background.texture = "assets/BattleInfoPanel.png";
-    battleInfoPanelConfig.background.size = {200.0f, 60.0f};
-
-    // End turn button: right-centre, between the right hand and discard pile.
-    ButtonUIConfig endTurnButtonConfig;
-    endTurnButtonConfig.transform.position = {1160.0f, 360.0f};
-    endTurnButtonConfig.sprite.texture = "assets/EndTurnButton.png";
-    endTurnButtonConfig.sprite.size = {120.0f, 60.0f};
-
-    // Window is 1280x720; centre x = 640.
-    // Cards sit on an arc spanning handPos.x +/- 200, with the middle slot
-    // pulled toward controlOffset.y. Keep hands clear of the top/bottom edges
-    // (a card is ~110 tall and drawn centred on its slot).
-
-    // Left hand: player's hand, bottom-centre.
-    HandUIConfig leftHandConfig;
-    leftHandConfig.transform.position = {640.0f, 600.0f};
-    leftHandConfig.slotCount = 5;
-    leftHandConfig.sprite.texture = "assets/LeftHandCover.png";
-    leftHandConfig.sprite.size = {200.0f, 52.0f}; // cover art is wide (~520x134)
-
-    // Right hand: opponent's hand, top-centre. Arc bows downward (toward the
-    // middle of the screen) so the cards stay below the top edge.
-    HandUIConfig rightHandConfig;
-    rightHandConfig.transform.position = {640.0f, 120.0f};
-    rightHandConfig.controlOffset = {0.0f, 60.0f};
-    rightHandConfig.slotCount = 5;
-    rightHandConfig.sprite.texture = "assets/RightHandCover.png";
-    rightHandConfig.sprite.size = {200.0f, 52.0f};
-
-    // Draw pile: bottom-left corner.
-    CardPileUIConfig drawPileConfig;
-    drawPileConfig.transform.position = {120.0f, 600.0f};
-    drawPileConfig.sprite.texture = "assets/DrawPile.png";
-    drawPileConfig.sprite.size = {90.0f, 113.0f};
-
-    // Discard pile: bottom-right corner.
+    // Discard pile: right column, bottom (0.1 x 0.2).
     CardPileUIConfig discardPileConfig;
-    discardPileConfig.transform.position = {1160.0f, 600.0f};
+    discardPileConfig.transform.position = {1216.0f, 648.0f};
     discardPileConfig.sprite.texture = "assets/DiscardPile.png";
-    discardPileConfig.sprite.size = {90.0f, 113.0f};
+    discardPileConfig.sprite.size = {128.0f, 144.0f};
 
-    // Core battle: a Captain, fire points, and a deck of card ids.
-    Captain captain;
+    // Core battle: the Captain owns the persistent deck; each battle copies it
+    // into its own draw pile.
+    std::vector<uint32_t> starterDeck;
+    for (uint32_t id = 0; id < 14; ++id)
+        starterDeck.push_back(id);
+    Captain captain("Captain", Health{30, 30}, starterDeck);
     CardPile deck;
-    for (uint32_t id = 0; id < 10; ++id)
+    for (uint32_t id : captain.getDeck())
         deck.addCard(id);
     const int startingFirePoints = 3;
-    Battle battle(captain, startingFirePoints, deck);
-
-    // Board: centre of the screen, between the two hands.
-    BoardUIConfig boardConfig;
-    boardConfig.transform.position = {640.0f, 360.0f};
+    Battle battle(captain, startingFirePoints, deck, BattleDifficultyType::Minor, maxActionPoints);
 
     BattleUI battleUI(
         battleConfig,
         boardConfig,
+        captainConfig,
         firePanelConfig,
         actionPointsConfig,
         progressPanelConfig,
@@ -111,12 +148,21 @@ int main() {
         discardPileConfig,
         drawPileConfig
     );
-    // NOTE: Battle doesn't expose fire points or spent action points (no
-    // getter/event for either), so neither panel can track changes yet —
-    // fire is seeded from the same value passed to Battle; action points
-    // start fully available.
+    // NOTE: Battle doesn't expose fire points (no getter/event), so the fire
+    // panel can't track changes yet — it is seeded from the same value passed
+    // to Battle.
     battleUI.setFireCount(startingFirePoints);
-    battleUI.setActionPointsSpent(0);
+
+    // Seed the panels from the core's current state; the subscriptions below
+    // keep them in sync from then on.
+    const ActionPoints& actionPoints = battle.getActionPoints();
+    battleUI.setActionPointsSpent(actionPoints.max - actionPoints.current);
+    const BattleInfo& info = battle.getInfo();
+    battleUI.setDifficulty(difficultyLabel(info.difficulty));
+    battleUI.setWhoseTurn(turnTypeLabel(info.turnType));
+    battleUI.setBattleLength(info.turnCount);
+    const Health& captainHealth = captain.getHealth();
+    battleUI.setCaptainHealth(captainHealth.current, captainHealth.max);
 
     // BattleUI only reacts to core events. The events don't carry the texture or
     // pile sizes the UI methods need, so each lambda reads those from the core's
@@ -137,6 +183,17 @@ int main() {
     });
     battle.onDrawPileRefilled([&battleUI, &battle](DrawPileRefilledEvent) {
         battleUI.refillDrawPile(battle.getDrawPile().size(), battle.getDiscardPile().size());
+    });
+    battle.onBattleInfoChanged([&battleUI](BattleInfoChangedEvent e) {
+        battleUI.setDifficulty(difficultyLabel(e.info.difficulty));
+        battleUI.setWhoseTurn(turnTypeLabel(e.info.turnType));
+        battleUI.setBattleLength(e.info.turnCount);
+    });
+    battle.onActionPointsChanged([&battleUI](ActionPointsChangedEvent e) {
+        battleUI.setActionPointsSpent(e.actionPoints.max - e.actionPoints.current);
+    });
+    captain.onHealthChanged([&battleUI](HealthChangedEvent e) {
+        battleUI.setCaptainHealth(e.health.current, e.health.max);
     });
 
     RenderSystem renderer;

@@ -7,6 +7,9 @@ CardPileUI::CardPileUI(CardPileUIConfig config)
       _anchorPoint(config.drawPoint),
       _config(std::move(config)) {
     transform.addChild(&_anchorPoint.transform);
+    transform.addChild(&countText.transform);
+    countText.transform.position = {-5.0f, -6.0f}; // roughly centred on the pile
+    countText.text.text = "0";
     hitbox.setRectangle(sprite.size);
 }
 

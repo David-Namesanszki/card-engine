@@ -1,9 +1,7 @@
 #pragma once
 
-#include <string>
+#include <cstdint>
 
 struct CardDrawnEvent {
     uint32_t cardId;
-    std::string drawSound;
-    std::string drawAnimation;
 };

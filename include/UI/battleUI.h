@@ -29,6 +29,7 @@ class BattleUI {
     BattleUI(
         BattleUIConfig config = {},
         BoardUIConfig boardConfig = {},
+        CaptainUIConfig captainConfig = {},
         FireResourcePanelUIConfig firePanelConfig = {},
         ActionPointsPanelUIConfig actionPointsConfig = {},
         ProgressPanelUIConfig progressPanelConfig = {},
@@ -50,6 +51,10 @@ class BattleUI {
     void transferCardToRight(uint32_t cardId);
     void setFireCount(int fireCount);
     void setActionPointsSpent(int spentCount);
+    void setDifficulty(const std::string& difficulty);
+    void setWhoseTurn(const std::string& whoseTurn);
+    void setBattleLength(int battleLength);
+    void setCaptainHealth(int current, int max);
 
     const CardPileUI& drawPile() const {
         return _drawPile;
