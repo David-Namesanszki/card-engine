@@ -7,7 +7,7 @@
         {
             "label": "Configure",
             "type": "shell",
-            "command": "cmake",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "args": ["-S", ".", "-B", "build", "-G", "Visual Studio 17 2022"],
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared", "clear": true },
@@ -16,7 +16,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "cmake",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "args": ["--build", "build", "--config", "Debug", "--target", "card-engine"],
             "group": { "kind": "build", "isDefault": true },
             "presentation": { "reveal": "always", "panel": "shared" },
@@ -35,7 +35,7 @@
         {
             "label": "Build Tests",
             "type": "shell",
-            "command": "cmake",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "args": ["--build", "build", "--config", "Debug", "--target", "card-engine-tests"],
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
