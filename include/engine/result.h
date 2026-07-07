@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <optional>
 #include <utility>
 #include <variant>
 
@@ -63,4 +64,44 @@ class Result {
     explicit Result(std::variant<T, E> data) : _data(std::move(data)) {}
 
     std::variant<T, E> _data;
+};
+
+// Result for operations with no success payload — "it happened, or here is
+// why it didn't". Same ok/err vocabulary as the primary template:
+//
+//   Result<void, BoardError> r = board.place(...);
+//   if (r.isErr()) return r.error();
+template <typename E>
+class Result<void, E> {
+  public:
+    static Result ok() {
+        return Result(std::nullopt);
+    }
+    static Result err(E error) {
+        return Result(std::move(error));
+    }
+
+    bool isOk() const {
+        return !_error.has_value();
+    }
+    bool isErr() const {
+        return _error.has_value();
+    }
+    explicit operator bool() const {
+        return isOk();
+    }
+
+    E& error() {
+        assert(isErr());
+        return *_error;
+    }
+    const E& error() const {
+        assert(isErr());
+        return *_error;
+    }
+
+  private:
+    explicit Result(std::optional<E> error) : _error(std::move(error)) {}
+
+    std::optional<E> _error;
 };
