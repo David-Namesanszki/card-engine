@@ -60,9 +60,20 @@ int main() {
     drawPileConfig.sprite.texture = "assets/DrawPile.png";
     drawPileConfig.sprite.size = {128.0f, 144.0f};
 
+    // Board layout: defined once, feeds both the core Board (rules) and the
+    // BoardUI (rendering).
+    std::vector<BoardTile> boardLayout = {
+        {{-1, 1}, BoardTileType::Unit, TeamType::Player},
+        {{-1, 0}, BoardTileType::Unit, TeamType::Enemy},
+        {{0, 0}, BoardTileType::Effect, TeamType::Neutral},
+        {{1, 0}, BoardTileType::Unit, TeamType::Player},
+        {{1, -1}, BoardTileType::Unit, TeamType::Enemy},
+    };
+
     // Board: centre column, upper region (0.8 x 0.7).
     BoardUIConfig boardConfig;
     boardConfig.transform.position = {640.0f, 252.0f};
+    boardConfig.tileDatas = boardLayout;
 
     // Bottom row of the centre column (0.3 tall): left hand, captain, right hand.
     // Cards sit on an arc spanning handPos.x +/- 200, with the middle slot
@@ -132,7 +143,10 @@ int main() {
     for (uint32_t id : captain.getDeck())
         deck.addCard(id);
     const int startingFirePoints = 3;
-    Battle battle(captain, startingFirePoints, deck, BattleDifficultyType::Minor, maxActionPoints);
+    Battle battle(
+        captain, startingFirePoints, deck, BattleDifficultyType::Minor, maxActionPoints,
+        Board(boardLayout)
+    );
 
     BattleUI battleUI(
         battleConfig,

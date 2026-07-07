@@ -2,7 +2,13 @@
 
 #include <string>
 #include <functional>
+#include <optional>
+#include <unordered_map>
 #include "core/cardPile.h"
+#include "core/board.h"
+#include "core/unit.h"
+#include "core/events/unitPlacedEvent.h"
+#include "core/events/unitMovedEvent.h"
 #include "engine/eventBus.h"
 #include "core/events/cardDrawnEvent.h"
 #include "core/events/cardTransferredToRightEvent.h"
@@ -24,7 +30,8 @@ class Battle {
         int firePoints,
         const CardPile& deck,
         BattleDifficultyType difficulty,
-        int maxActionPoints
+        int maxActionPoints,
+        Board board
     );
     void startPlayerTurn();
     void endPlayerTurn();
@@ -36,6 +43,10 @@ class Battle {
     void switchTurn();
     void refillActionPoints();
     void incrementTurnCounter();
+
+    // On success returns the id assigned to the placed unit.
+    Result<uint32_t, BoardError> placeUnit(const Unit& unit, HexCoord at);
+    BoardResult moveUnit(uint32_t unitId, HexCoord to);
 
     const CardPile& getDrawPile() const {
         return _drawPile;
@@ -54,6 +65,13 @@ class Battle {
     }
     const ActionPoints& getActionPoints() const {
         return _actionPoints;
+    }
+    const Board& getBoard() const {
+        return _board;
+    }
+    const Unit* getUnit(uint32_t unitId) const {
+        auto it = _units.find(unitId);
+        return it == _units.end() ? nullptr : &it->second;
     }
 
     void onCardDrawn(std::function<void(CardDrawnEvent)> cb) {
@@ -74,6 +92,12 @@ class Battle {
     void onActionPointsChanged(std::function<void(ActionPointsChangedEvent)> cb) {
         _actionPointsChangedEventBus.subscribe(cb);
     }
+    void onUnitPlaced(std::function<void(UnitPlacedEvent)> cb) {
+        _unitPlacedEventBus.subscribe(cb);
+    }
+    void onUnitMoved(std::function<void(UnitMovedEvent)> cb) {
+        _unitMovedEventBus.subscribe(cb);
+    }
 
   private:
     Captain& _captain;
@@ -84,6 +108,9 @@ class Battle {
     ActionPoints _actionPoints;
     int _firePoints;
     BattleInfo _info;
+    Board _board;
+    std::unordered_map<uint32_t, Unit> _units;
+    uint32_t _nextUnitId = 0;
 
     EventBus<CardDrawnEvent> _cardDrawnEventBus;
     EventBus<CardTransferredToRightEvent> _cardTransferredToRightEventBus;
@@ -91,4 +118,6 @@ class Battle {
     EventBus<DrawPileRefilledEvent> _drawPileRefilledEventBus;
     EventBus<BattleInfoChangedEvent> _battleInfoChangedEventBus;
     EventBus<ActionPointsChangedEvent> _actionPointsChangedEventBus;
+    EventBus<UnitPlacedEvent> _unitPlacedEventBus;
+    EventBus<UnitMovedEvent> _unitMovedEventBus;
 };

@@ -9,13 +9,15 @@ Battle::Battle(
     int firePoints,
     const CardPile& deck,
     BattleDifficultyType difficulty,
-    int maxActionPoints
+    int maxActionPoints,
+    Board board
 )
     : _captain(captain),
       _actionPoints{0, maxActionPoints},
       _firePoints(firePoints),
       _drawPile(deck),
-      _info{0, TurnType::Enemy, difficulty} {
+      _info{0, TurnType::Enemy, difficulty},
+      _board(std::move(board)) {
 }
 
 void Battle::startPlayerTurn() {
@@ -95,4 +97,27 @@ void Battle::playCard(uint32_t cardId, std::vector<uint32_t> targets) {
 
 Result<TargetReq, PlayError> Battle::tryPlayCard(uint32_t cardId) {
     return Result<TargetReq, PlayError>::ok({1, {5, 6, 7}});
+}
+
+Result<uint32_t, BoardError> Battle::placeUnit(const Unit& unit, HexCoord at) {
+    const uint32_t id = _nextUnitId;
+    BoardResult placed = _board.place(at, id, unit.team, BoardTileType::Unit);
+    if (placed.isErr())
+        return Result<uint32_t, BoardError>::err(placed.error());
+    ++_nextUnitId;
+    _units.emplace(id, unit);
+    _unitPlacedEventBus.emit({id, at});
+    return Result<uint32_t, BoardError>::ok(id);
+}
+
+BoardResult Battle::moveUnit(uint32_t unitId, HexCoord to) {
+    auto unitIt = _units.find(unitId);
+    std::optional<HexCoord> from = _board.find(unitId);
+    if (unitIt == _units.end() || !from)
+        return BoardResult::err(BoardError::NoOccupant);
+    BoardResult moved = _board.move(*from, to, unitIt->second.team, BoardTileType::Unit);
+    if (moved.isErr())
+        return moved;
+    _unitMovedEventBus.emit({unitId, *from, to});
+    return BoardResult::ok();
 }

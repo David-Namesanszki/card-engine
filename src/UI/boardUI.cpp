@@ -11,8 +11,8 @@ BoardUI::BoardUI(const BoardUIConfig& config) {
 
     uint32_t nextId = 0;
     for (const auto& data : config.tileDatas) {
-        _tiles.emplace_back(nextId++, data.type, data.team);
-        Vector2 hexPos = hexToPixelFlat(data.coord, kHexSize);
+        _tiles.emplace_back(nextId++, data.type(), data.team());
+        Vector2 hexPos = hexToPixelFlat(data.coord(), kHexSize);
         _tiles.back().transform.position = {
             config.transform.position.x + hexPos.x, config.transform.position.y + hexPos.y
         };
