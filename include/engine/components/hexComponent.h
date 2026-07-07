@@ -1,28 +1,15 @@
 #pragma once
-#include <array>
 #include <cmath>
-#include <cstddef>
-#include <functional>
 #include "raylib.h"
+#include "engine/hexCoord.h"
+
+// Presentation-side hex<->pixel conversions. HexCoord itself and the hex math
+// (neighbors, distance) live in engine/hexCoord.h so the core can use them
+// without pulling in raylib.
 
 enum class HexOrientation {
     FlatTop,
     PointyTop
-};
-
-struct HexCoord {
-    int q, r;
-    bool operator==(const HexCoord& other) const {
-        return q == other.q && r == other.r;
-    }
-};
-
-struct HexCoordHash {
-    size_t operator()(const HexCoord& h) const {
-        size_t hq = std::hash<int>{}(h.q);
-        size_t hr = std::hash<int>{}(h.r);
-        return hq ^ (hr + 0x9e3779b9 + (hq << 6) + (hq >> 2));
-    }
 };
 
 inline Vector2 hexToPixelFlat(HexCoord h, float size) {
@@ -73,22 +60,4 @@ inline HexCoord pixelToHexPointy(Vector2 p, float size) {
         r = -q - s;
 
     return {q, r};
-}
-
-inline std::array<HexCoord, 6> hexNeighbors(HexCoord h) {
-    return {
-        {{h.q + 1, h.r - 1},
-         {h.q + 1, h.r},
-         {h.q, h.r + 1},
-         {h.q - 1, h.r + 1},
-         {h.q - 1, h.r},
-         {h.q, h.r - 1}}
-    };
-}
-
-inline int hexDistance(HexCoord a, HexCoord b) {
-    int dq = a.q - b.q;
-    int dr = a.r - b.r;
-    int ds = -dq - dr;
-    return (abs(dq) + abs(dr) + abs(ds)) / 2;
 }
