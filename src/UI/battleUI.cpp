@@ -8,6 +8,7 @@
 BattleUI::BattleUI(
     BattleUIConfig config,
     BoardUIConfig boardConfig,
+    const std::vector<BoardTile>& boardTiles,
     CaptainUIConfig captainConfig,
     FireResourcePanelUIConfig firePanelConfig,
     ActionPointsPanelUIConfig actionPointsConfig,
@@ -17,10 +18,12 @@ BattleUI::BattleUI(
     HandUIConfig leftHandConfig,
     HandUIConfig rightHandConfig,
     CardPileUIConfig discardPileConfig,
-    CardPileUIConfig drawPileConfig
+    CardPileUIConfig drawPileConfig,
+    UnitUIConfig unitConfig
 )
     : _config(config),
-      _board(boardConfig),
+      _unitConfig(unitConfig),
+      _board(boardConfig, boardTiles),
       _captain(captainConfig),
       _drawPile(drawPileConfig),
       _discardPile(discardPileConfig),
@@ -44,8 +47,8 @@ void BattleUI::setFireCount(int fireCount) {
     _firePanel.setFireCount(fireCount);
 }
 
-void BattleUI::setActionPointsSpent(int spentCount) {
-    _actionPointsPanel.setSpent(spentCount);
+void BattleUI::setActionPoints(int current, int max) {
+    _actionPointsPanel.setActionPoints(current, max);
 }
 
 void BattleUI::setDifficulty(const std::string& difficulty) {
@@ -62,6 +65,44 @@ void BattleUI::setBattleLength(int battleLength) {
 
 void BattleUI::setCaptainHealth(int current, int max) {
     _captain.setHealth(current, max);
+}
+
+void BattleUI::placeUnit(
+    uint32_t unitId,
+    const std::string& name,
+    const std::string& texture,
+    Vector2 position,
+    int health,
+    int attackPower,
+    int defensivePower
+) {
+    UnitUI& unit = _units.emplace_back(unitId, _unitConfig);
+    unit.sprite.texture = texture;
+    unit.setName(name);
+    unit.setHealth(health);
+    unit.setAttackPower(attackPower);
+    unit.setDefensivePower(defensivePower);
+    unit.setArmor(0);
+    unit.transform.position = position;
+}
+
+void BattleUI::moveUnit(uint32_t unitId, Vector2 position) {
+    if (UnitUI* unit = findUnit(unitId))
+        unit->transform.position = position;
+}
+
+void BattleUI::setUnitHealth(uint32_t unitId, int health) {
+    if (UnitUI* unit = findUnit(unitId))
+        unit->setHealth(health);
+}
+
+void BattleUI::setUnitArmor(uint32_t unitId, int armor) {
+    if (UnitUI* unit = findUnit(unitId))
+        unit->setArmor(armor);
+}
+
+void BattleUI::removeUnit(uint32_t unitId) {
+    _units.remove_if([unitId](const UnitUI& unit) { return unit.id() == unitId; });
 }
 
 void BattleUI::transferCardToRight(uint32_t cardId) {
@@ -95,6 +136,17 @@ void BattleUI::discardFromRightHand(uint32_t cardId, int discardPileSize) {
 #pragma endregion
 
 #pragma region Helpers
+
+UnitUI* BattleUI::findUnit(uint32_t unitId) {
+    auto it = std::find_if(_units.begin(), _units.end(), [unitId](const UnitUI& unit) {
+        return unit.id() == unitId;
+    });
+    if (it == _units.end()) {
+        TraceLog(LOG_WARNING, "BattleUI: unit %u not found in unit list", unitId);
+        return nullptr;
+    }
+    return &*it;
+}
 
 CardUI BattleUI::takeCard(uint32_t cardId) {
     auto it = std::find_if(_cards.begin(), _cards.end(), [cardId](const CardUI& card) {

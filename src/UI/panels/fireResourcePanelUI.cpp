@@ -12,7 +12,7 @@ FireResourcePanelUI::FireResourcePanelUI(FireResourcePanelUIConfig config)
     firePip.sprite.size = config.pipSize;
 
     fireCountText.transform.position = {-5.0f, -6.0f};
-    fireCountText.text.text = "0";
+    fireCountText.text.text = "?"; // real count arrives via events
 }
 
 void FireResourcePanelUI::setFireCount(int fireCount) {

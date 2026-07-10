@@ -3,9 +3,10 @@
 #include <cmath>
 #include <iterator>
 
-FixedSlotHandUI::FixedSlotHandUI(HandUIConfig config) : _config(config) {
-    transform = config.transform;
-    sprite = config.sprite;
+FixedSlotHandUI::FixedSlotHandUI(HandUIConfig config)
+    : transform(config.transform),
+      sprite(config.sprite),
+      _config(config) {
     hitbox.setRectangle(sprite.size);
 
     _slots.resize(_config.slotCount);

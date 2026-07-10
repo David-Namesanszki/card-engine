@@ -2,31 +2,32 @@
 #include <algorithm>
 
 ActionPointsPanelUI::ActionPointsPanelUI(ActionPointsPanelUIConfig config)
-    : _config(config) {
-    transform = config.transform;
-    sprite = config.background;
-
-    _pips.resize(_config.maxActionPoints);
-    for (int i = 0; i < _config.maxActionPoints; i++) {
-        Pip pip;
-        pip.transform.position = slotPosition(i);
-        pip.sprite.texture = _config.availableTexture;
-        pip.sprite.size = _config.pipSize;
-        _pips[i] = pip;
-    }
+    : transform(config.transform),
+      sprite(config.background),
+      _config(config) {
 }
 
-void ActionPointsPanelUI::setSpent(int spentCount) {
-    spentCount = std::clamp(spentCount, 0, _config.maxActionPoints);
+void ActionPointsPanelUI::setActionPoints(int current, int max) {
+    if (max != _maxActionPoints) {
+        _maxActionPoints = max;
+        _pips.assign(max, Pip{});
+        for (int i = 0; i < max; i++) {
+            _pips[i].transform.position = slotPosition(i);
+            _pips[i].sprite.texture = _config.availableTexture;
+            _pips[i].sprite.size = _config.pipSize;
+        }
+    }
+
+    int spentCount = std::clamp(max - current, 0, _maxActionPoints);
     for (int i = 0; i < (int)_pips.size(); i++)
         _pips[i].sprite.texture =
             (i < spentCount) ? _config.spentTexture : _config.availableTexture;
 }
 
 Vector2 ActionPointsPanelUI::slotPosition(int slot) const {
-    float t = (_config.maxActionPoints <= 1)
+    float t = (_maxActionPoints <= 1)
                   ? 0.5f
-                  : static_cast<float>(slot) / static_cast<float>(_config.maxActionPoints - 1);
+                  : static_cast<float>(slot) / static_cast<float>(_maxActionPoints - 1);
     Vector2 start = {
         transform.position.x + _config.lineStartOffset.x,
         transform.position.y + _config.lineStartOffset.y

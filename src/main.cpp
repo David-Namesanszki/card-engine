@@ -73,7 +73,6 @@ int main() {
     // Board: centre column, upper region (0.8 x 0.7).
     BoardUIConfig boardConfig;
     boardConfig.transform.position = {640.0f, 252.0f};
-    boardConfig.tileDatas = boardLayout;
 
     // Bottom row of the centre column (0.3 tall): left hand, captain, right hand.
     // Cards sit on an arc spanning handPos.x +/- 200, with the middle slot
@@ -122,7 +121,6 @@ int main() {
     actionPointsConfig.background.size = {128.0f, 72.0f};
     actionPointsConfig.availableTexture = "assets/action_point.png";
     actionPointsConfig.spentTexture = "assets/action_point_spent.png";
-    actionPointsConfig.maxActionPoints = maxActionPoints;
     actionPointsConfig.lineStartOffset = {-40.0f, 0.0f};
     actionPointsConfig.lineEndOffset = {40.0f, 0.0f};
     actionPointsConfig.pipSize = {24.0f, 24.0f};
@@ -132,6 +130,10 @@ int main() {
     discardPileConfig.transform.position = {1216.0f, 648.0f};
     discardPileConfig.sprite.texture = "assets/DiscardPile.png";
     discardPileConfig.sprite.size = {128.0f, 144.0f};
+
+    // Units on the board: shared readout layout; per-unit sprite textures are
+    // chosen at placement.
+    UnitUIConfig unitConfig;
 
     // Core battle: the Captain owns the persistent deck; each battle copies it
     // into its own draw pile.
@@ -143,14 +145,30 @@ int main() {
     for (uint32_t id : captain.getDeck())
         deck.addCard(id);
     const int startingFirePoints = 3;
+    // Player units attack "up" the lane (toward decreasing r); enemies attack
+    // back along the negation.
     Battle battle(
-        captain, startingFirePoints, deck, BattleDifficultyType::Minor, maxActionPoints,
-        Board(boardLayout)
+        captain,
+        startingFirePoints,
+        deck,
+        BattleDifficultyType::Minor,
+        maxActionPoints,
+        Board(boardLayout, {0, -1})
     );
+
+    // Demo units on the four unit tiles so the combat wiring is visible.
+    // Placed before the UI exists — battle.startBattle() announces them.
+    auto playerUnitId =
+        battle.placeUnit(Unit("Archers", TeamType::Player, Health{8, 8}, 4, 2), {-1, 1});
+    auto enemyUnitId =
+        battle.placeUnit(Unit("Raiders", TeamType::Enemy, Health{6, 6}, 2, 1), {-1, 0});
+    battle.placeUnit(Unit("Archers", TeamType::Player, Health{8, 8}, 4, 2), {1, 0});
+    battle.placeUnit(Unit("Raiders", TeamType::Enemy, Health{6, 6}, 2, 1), {1, -1});
 
     BattleUI battleUI(
         battleConfig,
         boardConfig,
+        battle.getBoard().tiles(),
         captainConfig,
         firePanelConfig,
         actionPointsConfig,
@@ -160,23 +178,9 @@ int main() {
         leftHandConfig,
         rightHandConfig,
         discardPileConfig,
-        drawPileConfig
+        drawPileConfig,
+        unitConfig
     );
-    // NOTE: Battle doesn't expose fire points (no getter/event), so the fire
-    // panel can't track changes yet — it is seeded from the same value passed
-    // to Battle.
-    battleUI.setFireCount(startingFirePoints);
-
-    // Seed the panels from the core's current state; the subscriptions below
-    // keep them in sync from then on.
-    const ActionPoints& actionPoints = battle.getActionPoints();
-    battleUI.setActionPointsSpent(actionPoints.max - actionPoints.current);
-    const BattleInfo& info = battle.getInfo();
-    battleUI.setDifficulty(difficultyLabel(info.difficulty));
-    battleUI.setWhoseTurn(turnTypeLabel(info.turnType));
-    battleUI.setBattleLength(info.turnCount);
-    const Health& captainHealth = captain.getHealth();
-    battleUI.setCaptainHealth(captainHealth.current, captainHealth.max);
 
     // BattleUI only reacts to core events. The events don't carry the texture or
     // pile sizes the UI methods need, so each lambda reads those from the core's
@@ -204,11 +208,50 @@ int main() {
         battleUI.setBattleLength(e.info.turnCount);
     });
     battle.onActionPointsChanged([&battleUI](ActionPointsChangedEvent e) {
-        battleUI.setActionPointsSpent(e.actionPoints.max - e.actionPoints.current);
+        battleUI.setActionPoints(e.actionPoints.current, e.actionPoints.max);
+    });
+    battle.onFirePointsChanged([&battleUI](FirePointsChangedEvent e) {
+        battleUI.setFireCount(e.firePoints);
     });
     captain.onHealthChanged([&battleUI](HealthChangedEvent e) {
         battleUI.setCaptainHealth(e.health.current, e.health.max);
     });
+
+    // Unit events. UnitPlacedEvent carries a snapshot of the unit, so the UI
+    // reads stats straight from the payload; positions come from the board's
+    // hex-to-screen mapping.
+    // TODO: every unit is an archer until per-unit-type art (and a unit kind
+    // in core to select it) exists.
+    battle.onUnitPlaced([&battleUI](UnitPlacedEvent e) {
+        const char* texture = "assets/units/viking.png";
+        battleUI.placeUnit(
+            e.unitId,
+            e.unit.getName(),
+            texture,
+            battleUI.board().unitPosition(e.at),
+            e.unit.getHealth().current,
+            e.unit.getAttackPower(),
+            e.unit.getArmor().getDefensivePower()
+        );
+    });
+    battle.onUnitMoved([&battleUI](UnitMovedEvent e) {
+        battleUI.moveUnit(e.unitId, battleUI.board().unitPosition(e.to));
+    });
+    battle.onUnitDamaged([&battleUI](UnitDamagedEvent e) {
+        battleUI.setUnitHealth(e.unitId, e.health.current);
+        battleUI.setUnitArmor(e.unitId, e.currentArmor);
+    });
+    battle.onUnitHealed([&battleUI](UnitHealedEvent e) {
+        battleUI.setUnitHealth(e.unitId, e.health.current);
+    });
+    battle.onUnitDefended([&battleUI](UnitDefendedEvent e) {
+        battleUI.setUnitArmor(e.unitId, e.currentArmor);
+    });
+    battle.onUnitDied([&battleUI](UnitDiedEvent e) { battleUI.removeUnit(e.unitId); });
+
+    // Everything is wired; the core announces its opening state through the
+    // same buses the UI already listens to.
+    battle.startBattle();
 
     RenderSystem renderer;
     InputSystem inputSystem;
@@ -227,6 +270,14 @@ int main() {
         if (IsKeyPressed(KEY_T)) {
             battle.startPlayerTurn();
         }
+
+        // Combat demo keys, driving the first lane's units.
+        if (IsKeyPressed(KEY_A) && playerUnitId)
+            battle.attackWithUnit(playerUnitId.value());
+        if (IsKeyPressed(KEY_G) && enemyUnitId)
+            battle.defendWithUnit(enemyUnitId.value());
+        if (IsKeyPressed(KEY_H) && enemyUnitId)
+            battle.healUnit(enemyUnitId.value(), 2);
 
         for (const InputEvent& event : inputSystem.getInputs()) {
             std::optional<HitResult> hit = hitTestSystem.hitTest(event.position, battleUI);
@@ -268,13 +319,7 @@ int main() {
         if (intentSystem.getInputState() == InputState::Target)
             renderer.renderTargetOverlay(battleUI, targetSystem.getPossibleTargets());
 
-        DrawText(
-            "D draw   T transfer L>R   E discard L   F discard R   R reshuffle",
-            10,
-            10,
-            16,
-            LIGHTGRAY
-        );
+        DrawText("T start turn   D end turn   A attack   G defend   H heal", 10, 10, 16, LIGHTGRAY);
 
         EndDrawing();
     }

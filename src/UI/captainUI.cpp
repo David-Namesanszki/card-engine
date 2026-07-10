@@ -13,7 +13,7 @@ CaptainUI::CaptainUI(CaptainUIConfig config)
     healthPip.sprite.size = config.pipSize;
 
     healthText.transform.position = {-5.0f, 70.0f};
-    healthText.text.text = "";
+    healthText.text.text = "?"; // real value arrives via events
 }
 
 void CaptainUI::setHealth(int current, int max) {

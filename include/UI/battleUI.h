@@ -29,6 +29,9 @@ class BattleUI {
     BattleUI(
         BattleUIConfig config = {},
         BoardUIConfig boardConfig = {},
+        // Game content, not theme — source it from the core
+        // (battle.getBoard().tiles()).
+        const std::vector<BoardTile>& boardTiles = {},
         CaptainUIConfig captainConfig = {},
         FireResourcePanelUIConfig firePanelConfig = {},
         ActionPointsPanelUIConfig actionPointsConfig = {},
@@ -38,7 +41,8 @@ class BattleUI {
         HandUIConfig leftHandConfig = {},
         HandUIConfig rightHandConfig = {},
         CardPileUIConfig discardPileConfig = {},
-        CardPileUIConfig drawPileConfig = {}
+        CardPileUIConfig drawPileConfig = {},
+        UnitUIConfig unitConfig = {}
     );
 
     TransformComponent transform;
@@ -50,11 +54,25 @@ class BattleUI {
     void discardFromRightHand(uint32_t cardId, int discardPileSize);
     void transferCardToRight(uint32_t cardId);
     void setFireCount(int fireCount);
-    void setActionPointsSpent(int spentCount);
+    void setActionPoints(int current, int max);
     void setDifficulty(const std::string& difficulty);
     void setWhoseTurn(const std::string& whoseTurn);
     void setBattleLength(int battleLength);
     void setCaptainHealth(int current, int max);
+
+    void placeUnit(
+        uint32_t unitId,
+        const std::string& name,
+        const std::string& texture,
+        Vector2 position,
+        int health,
+        int attackPower,
+        int defensivePower
+    );
+    void moveUnit(uint32_t unitId, Vector2 position);
+    void setUnitHealth(uint32_t unitId, int health);
+    void setUnitArmor(uint32_t unitId, int armor);
+    void removeUnit(uint32_t unitId);
 
     const CardPileUI& drawPile() const {
         return _drawPile;
@@ -100,8 +118,10 @@ class BattleUI {
     void reorganizeHand(const FixedSlotHandUI& hand);
     void addCard(uint32_t cardId, std::string texture);
     CardUI takeCard(uint32_t cardId);
+    UnitUI* findUnit(uint32_t unitId);
 
     BattleUIConfig _config;
+    UnitUIConfig _unitConfig;
 
     CardPileUI _drawPile;
     CardPileUI _discardPile;

@@ -5,11 +5,11 @@
 #include "raylib.h"
 #include <string>
 
+// Purely cosmetic; the pip count is game state and reaches the panel as a
+// constructor parameter sourced from the core.
 struct ActionPointsPanelUIConfig {
     TransformComponent transform;
     SpriteComponent background;
-
-    int maxActionPoints = 3;
 
     // Straight-line layout (unlike FixedSlotHandUI's arc): pips are evenly
     // spaced between these two offsets, no curve/rotation involved.
