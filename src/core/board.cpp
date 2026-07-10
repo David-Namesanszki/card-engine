@@ -1,6 +1,9 @@
 #include "core/board.h"
 
-Board::Board(const std::vector<BoardTile>& boardTiles) : _boardTiles(boardTiles) {}
+Board::Board(const std::vector<BoardTile>& boardTiles, HexCoord attackDirection)
+    : _boardTiles(boardTiles),
+      _attackDirection(attackDirection) {
+}
 
 const BoardTile* Board::tile(HexCoord coord) const {
     for (const auto& t : _boardTiles)
@@ -9,10 +12,17 @@ const BoardTile* Board::tile(HexCoord coord) const {
     return nullptr;
 }
 
-BoardTile* Board::tileAt(HexCoord coord) {
+BoardTile* Board::tile(HexCoord coord) {
     for (auto& t : _boardTiles)
         if (t.coord() == coord)
             return &t;
+    return nullptr;
+}
+
+const BoardTile* Board::firstOccupiedTileAlong(HexCoord from, HexCoord dir) const {
+    for (const BoardTile* t = tile(from + dir); t; t = tile(t->coord() + dir))
+        if (t->isOccupied())
+            return t;
     return nullptr;
 }
 
@@ -27,7 +37,6 @@ BoardResult Board::canPlace(HexCoord at, TeamType team, BoardTileType kind) cons
     const BoardTile* t = tile(at);
     if (!t)
         return BoardResult::err(BoardError::NoSuchTile);
-    // Effect tiles accept nothing: an occupant's kind is Unit or Construction.
     if (t->type() != kind)
         return BoardResult::err(BoardError::WrongTileType);
     if (t->team() != team)
@@ -41,12 +50,12 @@ BoardResult Board::place(HexCoord at, uint32_t id, TeamType team, BoardTileType 
     BoardResult check = canPlace(at, team, kind);
     if (check.isErr())
         return check;
-    tileAt(at)->setOccupant(id);
+    tile(at)->setOccupant(id);
     return BoardResult::ok();
 }
 
 BoardResult Board::move(HexCoord from, HexCoord to, TeamType team, BoardTileType kind) {
-    BoardTile* src = tileAt(from);
+    BoardTile* src = tile(from);
     if (!src)
         return BoardResult::err(BoardError::NoSuchTile);
     if (!src->isOccupied())
@@ -54,13 +63,13 @@ BoardResult Board::move(HexCoord from, HexCoord to, TeamType team, BoardTileType
     BoardResult check = canPlace(to, team, kind);
     if (check.isErr())
         return check;
-    tileAt(to)->setOccupant(*src->occupantId());
+    tile(to)->setOccupant(*src->occupantId());
     src->clearOccupant();
     return BoardResult::ok();
 }
 
 std::optional<uint32_t> Board::remove(HexCoord at) {
-    BoardTile* t = tileAt(at);
+    BoardTile* t = tile(at);
     if (!t || !t->isOccupied())
         return std::nullopt;
     std::optional<uint32_t> removed = t->occupantId();

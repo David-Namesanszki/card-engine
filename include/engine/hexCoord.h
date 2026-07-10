@@ -13,6 +13,12 @@ struct HexCoord {
     bool operator==(const HexCoord& other) const {
         return q == other.q && r == other.r;
     }
+    HexCoord operator+(const HexCoord& other) const {
+        return {q + other.q, r + other.r};
+    }
+    HexCoord operator-() const {
+        return {-q, -r};
+    }
 };
 
 struct HexCoordHash {

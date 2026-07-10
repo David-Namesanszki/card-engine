@@ -20,6 +20,25 @@ Battle::Battle(
       _board(std::move(board)) {
 }
 
+void Battle::startBattle() {
+    // Call-once: re-announcing would duplicate the UI's units, since
+    // UnitPlacedEvent creates a widget per emission.
+    if (_started)
+        return;
+    _started = true;
+
+    _battleInfoChangedEventBus.emit({_info});
+    _actionPointsChangedEventBus.emit({_actionPoints});
+    _firePointsChangedEventBus.emit({_firePoints});
+    _drawPileRefilledEventBus.emit({});
+    for (const auto& [id, unit] : _units) {
+        std::optional<HexCoord> at = _board.find(id);
+        if (at)
+            _unitPlacedEventBus.emit({id, *at, unit});
+    }
+    _captain.announce();
+}
+
 void Battle::startPlayerTurn() {
     switchTurn();
     for (size_t i = 0; i < DRAW_SIZE; i++) {
@@ -101,23 +120,86 @@ Result<TargetReq, PlayError> Battle::tryPlayCard(uint32_t cardId) {
 
 Result<uint32_t, BoardError> Battle::placeUnit(const Unit& unit, HexCoord at) {
     const uint32_t id = _nextUnitId;
-    BoardResult placed = _board.place(at, id, unit.team, BoardTileType::Unit);
+    BoardResult placed = _board.place(at, id, unit.getTeam(), BoardTileType::Unit);
     if (placed.isErr())
         return Result<uint32_t, BoardError>::err(placed.error());
     ++_nextUnitId;
     _units.emplace(id, unit);
-    _unitPlacedEventBus.emit({id, at});
+    _unitPlacedEventBus.emit({id, at, unit});
     return Result<uint32_t, BoardError>::ok(id);
 }
 
+Unit* Battle::findUnit(uint32_t unitId) {
+    auto it = _units.find(unitId);
+    return it == _units.end() ? nullptr : &it->second;
+}
+
 BoardResult Battle::moveUnit(uint32_t unitId, HexCoord to) {
-    auto unitIt = _units.find(unitId);
+    Unit* unit = findUnit(unitId);
     std::optional<HexCoord> from = _board.find(unitId);
-    if (unitIt == _units.end() || !from)
+    if (!unit || !from)
         return BoardResult::err(BoardError::NoOccupant);
-    BoardResult moved = _board.move(*from, to, unitIt->second.team, BoardTileType::Unit);
+    BoardResult moved = _board.move(*from, to, unit->getTeam(), BoardTileType::Unit);
     if (moved.isErr())
         return moved;
     _unitMovedEventBus.emit({unitId, *from, to});
     return BoardResult::ok();
+}
+
+int Battle::dealDamageToUnit(uint32_t unitId, int amount) {
+    Unit* unit = findUnit(unitId);
+    if (!unit)
+        return 0;
+    int excess = unit->takeDamage(amount);
+    _unitDamagedEventBus.emit({unitId, unit->getHealth(), unit->getArmor().getCurrentArmor()});
+
+    if (!unit->isDead())
+        return excess;
+    std::optional<HexCoord> at = _board.find(unitId);
+    if (at)
+        _board.remove(*at);
+    _units.erase(unitId);
+    _unitDiedEventBus.emit({unitId, at.value_or(HexCoord{})});
+    return excess;
+}
+
+void Battle::attackWithUnit(uint32_t attackerId) {
+    Unit* attacker = findUnit(attackerId);
+    std::optional<HexCoord> from = _board.find(attackerId);
+    if (!attacker || !from)
+        return;
+
+    HexCoord dir = _board.attackDirectionFor(attacker->getTeam());
+
+    // Overkill pierces: damage beyond a victim's armor + health carries on to
+    // the next unit down the lane.
+    int damage = attacker->getAttackPower();
+    HexCoord at = *from;
+    while (damage > 0) {
+        const BoardTile* targetTile = _board.firstOccupiedTileAlong(at, dir);
+        if (!targetTile)
+            return;
+        uint32_t targetId = *targetTile->occupantId();
+        Unit* target = findUnit(targetId);
+        if (!target || target->getTeam() == attacker->getTeam())
+            return; // the lane is blocked by a friendly or a non-unit occupant
+        at = targetTile->coord();
+        damage = dealDamageToUnit(targetId, damage);
+    }
+}
+
+void Battle::defendWithUnit(uint32_t defenderId) {
+    Unit* unit = findUnit(defenderId);
+    if (!unit)
+        return;
+    unit->defend();
+    _unitDefendedEventBus.emit({defenderId, unit->getArmor().getCurrentArmor()});
+}
+
+void Battle::healUnit(uint32_t unitId, int amount) {
+    Unit* unit = findUnit(unitId);
+    if (!unit)
+        return;
+    unit->heal(amount);
+    _unitHealedEventBus.emit({unitId, unit->getHealth()});
 }
