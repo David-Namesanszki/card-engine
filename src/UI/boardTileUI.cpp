@@ -32,8 +32,8 @@ std::string getTexturePath(TeamType team, BoardTileType type) {
 }
 } // namespace
 
-BoardTileUI::BoardTileUI(uint32_t id, BoardTileType type, TeamType team)
-    : _id(id) {
+BoardTileUI::BoardTileUI(HexCoord coord, BoardTileType type, TeamType team)
+    : _coord(coord) {
     sprite.texture = getTexturePath(team, type);
     hitbox.setRectangle(sprite.size);
 }

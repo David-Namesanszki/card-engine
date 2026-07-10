@@ -25,6 +25,25 @@ void RenderSystem::drawText(
         return;
 
     Vector2 pos = transform.worldPosition();
+
+    // Poor-man's outline: the text drawn at the eight surrounding offsets in
+    // the outline colour, then the real text on top.
+    int t = textComponent.outlineThickness;
+    if (t > 0) {
+        for (int dx = -t; dx <= t; dx += t)
+            for (int dy = -t; dy <= t; dy += t) {
+                if (dx == 0 && dy == 0)
+                    continue;
+                DrawText(
+                    textComponent.text.c_str(),
+                    (int)pos.x + dx,
+                    (int)pos.y + dy,
+                    textComponent.fontSize,
+                    textComponent.outlineColor
+                );
+            }
+    }
+
     DrawText(
         textComponent.text.c_str(),
         (int)pos.x,
@@ -91,13 +110,17 @@ void RenderSystem::renderCaptain(const CaptainUI& captain) {
 
 void RenderSystem::renderUnit(const UnitUI& unit) {
     draw(unit.transform, unit.sprite);
+    draw(unit.namePip.transform, unit.namePip.sprite);
+    drawText(unit.nameText.transform, unit.nameText.text);
     draw(unit.healthPip.transform, unit.healthPip.sprite);
     draw(unit.attackPowerPip.transform, unit.attackPowerPip.sprite);
     draw(unit.defensivePowerPip.transform, unit.defensivePowerPip.sprite);
+    draw(unit.armorPip.transform, unit.armorPip.sprite);
 
     drawText(unit.healthText.transform, unit.healthText.text);
     drawText(unit.attackPowerText.transform, unit.attackPowerText.text);
     drawText(unit.defensivePowerText.transform, unit.defensivePowerText.text);
+    drawText(unit.armorText.transform, unit.armorText.text);
 }
 
 void RenderSystem::renderCardPile(const CardPileUI& cardPile) {
