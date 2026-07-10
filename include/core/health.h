@@ -9,8 +9,11 @@ struct Health {
     bool isDead() const {
         return current <= 0;
     }
-    void damage(int amount) {
+    // Returns the damage left over after health is exhausted (0 if it survives).
+    int damage(int amount) {
+        int excess = std::max(amount - current, 0);
         current = std::max(current - amount, 0);
+        return excess;
     }
     void heal(int amount) {
         current = std::min(current + amount, max);

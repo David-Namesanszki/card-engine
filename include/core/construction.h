@@ -1,3 +1,7 @@
 #pragma once
 
-class Construction {};
+class Construction {
+  public:
+  private:
+    int _durability;
+};

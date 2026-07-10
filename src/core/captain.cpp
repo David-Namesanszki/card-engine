@@ -14,3 +14,7 @@ void Captain::takeDamage(int amount) {
     _health.damage(amount);
     _healthChangedEventBus.emit({_health});
 }
+
+void Captain::announce() {
+    _healthChangedEventBus.emit({_health});
+}

@@ -14,6 +14,9 @@ class Captain {
 
     void takeDamage(int amount);
     bool isDead() const;
+    // Re-emits the current state on the usual buses, so subscribers wired
+    // after construction (the UI at battle start) get the opening snapshot.
+    void announce();
 
     void onHealthChanged(std::function<void(HealthChangedEvent)> cb) {
         _healthChangedEventBus.subscribe(cb);
