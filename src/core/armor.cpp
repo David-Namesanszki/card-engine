@@ -1,4 +1,4 @@
-#include "core/armor.h"
+#include "core/attributes/armor.h"
 #include <algorithm>
 
 void Armor::defend() {

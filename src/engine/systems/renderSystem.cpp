@@ -96,6 +96,32 @@ void RenderSystem::renderBattle(const BattleUI& battle) {
     renderButton(battle.endTurnButton());
 }
 
+void RenderSystem::renderTactical(const TacticalUI& tactical) {
+    renderBoard(tactical.board());
+    for (const auto& unit : tactical.units())
+        renderUnit(unit);
+
+    renderBattleInfoPanel(tactical.battleInfoPanel());
+    renderProgressPanel(tactical.progressPanel());
+    renderRoster(tactical.roster());
+}
+
+void RenderSystem::renderRoster(const RosterUI& roster) {
+    const ScrollViewUI& scrollView = roster.scrollView();
+    draw(scrollView.transform, scrollView.background);
+
+    // Entries scrolled outside the viewport are clipped away.
+    Rectangle viewport = scrollView.viewportRect();
+    BeginScissorMode(
+        (int)viewport.x, (int)viewport.y, (int)viewport.width, (int)viewport.height
+    );
+    for (const auto& unit : roster.units())
+        renderUnit(unit);
+    for (const auto& construction : roster.constructions())
+        renderConstruction(construction);
+    EndScissorMode();
+}
+
 void RenderSystem::renderBoard(const BoardUI& board) {
     draw(board.transform, board.sprite);
     for (const auto& tile : board.tiles())
@@ -121,6 +147,14 @@ void RenderSystem::renderUnit(const UnitUI& unit) {
     drawText(unit.attackPowerText.transform, unit.attackPowerText.text);
     drawText(unit.defensivePowerText.transform, unit.defensivePowerText.text);
     drawText(unit.armorText.transform, unit.armorText.text);
+}
+
+void RenderSystem::renderConstruction(const ConstructionUI& construction) {
+    draw(construction.transform, construction.sprite);
+    draw(construction.namePip.transform, construction.namePip.sprite);
+    drawText(construction.nameText.transform, construction.nameText.text);
+    draw(construction.durabilityPip.transform, construction.durabilityPip.sprite);
+    drawText(construction.durabilityText.transform, construction.durabilityText.text);
 }
 
 void RenderSystem::renderCardPile(const CardPileUI& cardPile) {

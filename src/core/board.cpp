@@ -1,15 +1,31 @@
 #include "core/board.h"
 
-Board::Board(const std::vector<BoardTile>& boardTiles, HexCoord attackDirection)
-    : _boardTiles(boardTiles),
-      _attackDirection(attackDirection) {
+Board::Board(HexCoord attackDirection)
+    : _attackDirection(attackDirection) {
+}
+
+void Board::addTile(HexCoord coord, BoardTileType type, TeamType team) {
+    _boardTiles.emplace_back(coord, type, team);
+}
+
+std::vector<uint32_t> Board::getPlacedOccupantIds(BoardTileType type) {
+    std::vector<uint32_t> occupant;
+    for (BoardTile boardTile : _boardTiles) {
+        if (boardTile.isOccupied() && boardTile.type() == type) {
+            occupant.emplace_back(boardTile.occupantId());
+        }
+    }
+
+    return occupant;
 }
 
 const BoardTile* Board::tile(HexCoord coord) const {
-    for (const auto& t : _boardTiles)
-        if (t.coord() == coord)
-            return &t;
-    return nullptr;
+    auto it =
+        std::find_if(_boardTiles.begin(), _boardTiles.end(), [coord](const BoardTile& boardTile) {
+            return boardTile.coord() == coord;
+        });
+
+    return it == _boardTiles.end() ? nullptr : &*it;
 }
 
 BoardTile* Board::tile(HexCoord coord) {

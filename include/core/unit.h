@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include "core/health.h"
-#include "core/armor.h"
+#include <cstdint>
+#include "core/attributes/health.h"
+#include "core/attributes/armor.h"
 #include "core/types/teamType.h"
 
 class Unit {
@@ -31,6 +32,12 @@ class Unit {
     int getAttackPower() const {
         return _attackPower;
     }
+    uint32_t getId() const {
+        return _id;
+    }
+    void setId(uint32_t id) {
+        _id = id;
+    }
 
   private:
     std::string _name;
@@ -38,4 +45,5 @@ class Unit {
     Health _health;
     Armor _armor;
     int _attackPower = 0;
+    uint32_t _id = 0;
 };

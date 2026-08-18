@@ -128,12 +128,13 @@ class BattleUI {
     FixedSlotHandUI _leftHand;
     FixedSlotHandUI _rightHand;
     BoardUI _board;
-    std::list<CardUI> _cards;
     FireResourcePanelUI _firePanel;
     ActionPointsPanelUI _actionPointsPanel;
     ProgressPanelUI _progressPanel;
     BattleInfoPanelUI _battleInfoPanel;
     ButtonUI _endTurnButton;
     CaptainUI _captain;
+
+    std::list<CardUI> _cards;
     std::list<UnitUI> _units;
 };

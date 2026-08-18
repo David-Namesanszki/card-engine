@@ -12,8 +12,10 @@ using BoardResult = Result<void, BoardError>;
 
 class Board {
   public:
-    Board(const std::vector<BoardTile>& boardTiles, HexCoord attackDirection);
+    Board(HexCoord attackDirection);
 
+    void addTile(HexCoord coord, BoardTileType type, TeamType team);
+    std::vector<uint32_t> getPlacedOccupantIds(BoardTileType type);
     const std::vector<BoardTile>& tiles() const {
         return _boardTiles;
     }
@@ -22,9 +24,6 @@ class Board {
     }
     const BoardTile* tile(HexCoord coord) const;
     std::optional<HexCoord> find(uint32_t occupantId) const;
-    // Walks tile by tile from `from` (exclusive) along `dir` until the board
-    // ends; returns the first occupied tile encountered, whatever its
-    // occupant's team or kind.
     const BoardTile* firstOccupiedTileAlong(HexCoord from, HexCoord dir) const;
 
     BoardResult canPlace(HexCoord at, TeamType team, BoardTileType kind) const;

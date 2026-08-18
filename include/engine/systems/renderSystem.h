@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UI/battleUI.h"
+#include "UI/tacticalUI.h"
 #include "engine/components/transformComponent.h"
 #include "engine/components/spriteComponent.h"
 #include "raylib.h"
@@ -15,6 +16,7 @@ class RenderSystem {
     ~RenderSystem();
 
     void renderBattle(const BattleUI& battle);
+    void renderTactical(const TacticalUI& tactical);
 
     // Darkens the whole screen, then redraws the given cards at full
     // brightness so only they stand out. Call after render(), and only while
@@ -43,6 +45,8 @@ class RenderSystem {
     void renderButton(const ButtonUI& button);
     void renderCaptain(const CaptainUI& captain);
     void renderUnit(const UnitUI& unit);
+    void renderConstruction(const ConstructionUI& construction);
+    void renderRoster(const RosterUI& roster);
 
     std::unordered_map<std::string, Texture2D> _textures;
 };

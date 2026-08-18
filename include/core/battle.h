@@ -21,27 +21,30 @@
 #include "core/events/battleInfoChangedEvent.h"
 #include "core/events/actionPointsChangedEvent.h"
 #include "core/events/firePointsChangedEvent.h"
+#include "core/events/tacticalPhaseStartedEvent.h"
+#include "core/events/battleStartedEvent.h"
 #include "core/captain.h"
+#include "core/roster.h"
 #include "core/targetReq.h"
 #include "engine/result.h"
 #include "core/cardPlayError.h"
 #include "core/battleInfo.h"
-#include "core/actionPoints.h"
+#include "core/attributes/actionPoints.h"
 
 class Battle {
   public:
-    Battle(
-        Captain& captain,
-        int firePoints,
-        const CardPile& deck,
-        BattleDifficultyType difficulty,
-        int maxActionPoints,
-        Board board
-    );
+    Battle(Captain& captain, BattleDifficultyType difficulty, Board board);
     // Announces the battle's current state through the normal event buses.
     // Call once, after subscribers are wired: the UI initialises from these
     // events the same way it stays current afterwards.
     void startBattle();
+    void startTacticalPhase();
+
+    // Re-emits the full snapshot for freshly wired subscribers (a new scene
+    // after clearSubscriptions). Only safe when no subscriber holds stale
+    // projections — announcing to a populated UI duplicates its units.
+    // Drops every subscriber; part of the scene-switch protocol:
+    // clearSubscriptions -> wire the new scene -> announce.
     void startPlayerTurn();
     void endPlayerTurn();
     void drawCard();
@@ -53,15 +56,14 @@ class Battle {
     void switchTurn();
     void refillActionPoints();
     void incrementTurnCounter();
-
     void healUnit(uint32_t unitId, int amount);
     void attackWithUnit(uint32_t attackerId);
     void defendWithUnit(uint32_t defenderId);
-    // Returns the overkill damage the unit could not absorb (0 if it survived
-    // or the id is stale) — attackWithUnit carries it down the lane.
     int dealDamageToUnit(uint32_t unitId, int amount);
-    Result<uint32_t, BoardError> placeUnit(const Unit& unit, HexCoord at);
+    void placeUnit(uint32_t unitId, HexCoord at);
     BoardResult moveUnit(uint32_t unitId, HexCoord to);
+
+#pragma region Getters
 
     const CardPile& getDrawPile() const {
         return _drawPile;
@@ -84,10 +86,10 @@ class Battle {
     const Board& getBoard() const {
         return _board;
     }
-    const Unit* getUnit(uint32_t unitId) const {
-        auto it = _units.find(unitId);
-        return it == _units.end() ? nullptr : &it->second;
-    }
+
+#pragma endregion
+
+#pragma region Subscribers
 
     void onCardDrawn(std::function<void(CardDrawnEvent)> cb) {
         _cardDrawnEventBus.subscribe(cb);
@@ -128,23 +130,24 @@ class Battle {
     void onUnitDefended(std::function<void(UnitDefendedEvent)> cb) {
         _unitDefendedEventBus.subscribe(cb);
     }
+    void onRosterChanged(std::function<void(Roster)> cb) {
+        _rosterChangedEventBus.subscribe(cb);
+    }
+
+#pragma endregion
 
   private:
-    // Mutable twin of getUnit for Battle's own rule code.
-    Unit* findUnit(uint32_t unitId);
-
     Captain& _captain;
     CardPile _leftHand{5};
     CardPile _rightHand{5};
     CardPile _drawPile{-1};
     CardPile _discardPile{-1};
     ActionPoints _actionPoints;
-    int _firePoints;
     BattleInfo _info;
     bool _started = false;
     Board _board;
-    std::unordered_map<uint32_t, Unit> _units;
-    uint32_t _nextUnitId = 0;
+    std::vector<uint32_t> _units;
+    std::vector<uint32_t> _constructions;
 
     EventBus<CardDrawnEvent> _cardDrawnEventBus;
     EventBus<CardTransferredToRightEvent> _cardTransferredToRightEventBus;
@@ -159,4 +162,7 @@ class Battle {
     EventBus<UnitHealedEvent> _unitHealedEventBus;
     EventBus<UnitDiedEvent> _unitDiedEventBus;
     EventBus<UnitDefendedEvent> _unitDefendedEventBus;
+    EventBus<Roster> _rosterChangedEventBus;
+    EventBus<TacticalPhaseStartedEvent> _tacticalPhaseStartedEventBus;
+    EventBus<BattleStartedEvent> _battleStartedEventBus;
 };

@@ -16,7 +16,8 @@ class BoardTile {
     BoardTile(HexCoord coord, BoardTileType type, TeamType team)
         : _coord(coord),
           _type(type),
-          _team(team) {}
+          _team(team) {
+    }
 
     HexCoord coord() const {
         return _coord;
@@ -34,8 +35,6 @@ class BoardTile {
         return _occupantId;
     }
 
-    // Occupancy is meant to change only through the Board's rule-checked
-    // mutations — call these via Board::place/move/remove, not directly.
     void setOccupant(uint32_t id) {
         _occupantId = id;
     }
@@ -44,7 +43,7 @@ class BoardTile {
     }
 
   private:
-    HexCoord _coord; // fixed slot identity and rules
+    HexCoord _coord;
     BoardTileType _type;
     TeamType _team;
     std::optional<uint32_t> _occupantId;

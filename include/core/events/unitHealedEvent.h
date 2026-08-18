@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "core/health.h"
+#include "core/attributes/health.h"
 
 struct UnitHealedEvent {
     uint32_t unitId;

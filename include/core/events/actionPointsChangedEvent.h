@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/actionPoints.h"
+#include "core/attributes/actionPoints.h"
 
 struct ActionPointsChangedEvent {
     ActionPoints actionPoints;

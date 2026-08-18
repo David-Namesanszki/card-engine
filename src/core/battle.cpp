@@ -4,39 +4,59 @@
 
 constexpr int DRAW_SIZE = 6;
 
-Battle::Battle(
-    Captain& captain,
-    int firePoints,
-    const CardPile& deck,
-    BattleDifficultyType difficulty,
-    int maxActionPoints,
-    Board board
-)
+Battle::Battle(Captain& captain, BattleDifficultyType difficulty, Board board)
     : _captain(captain),
-      _actionPoints{0, maxActionPoints},
-      _firePoints(firePoints),
-      _drawPile(deck),
+      _actionPoints{0, captain.getMaxActionPointCount()},
       _info{0, TurnType::Enemy, difficulty},
       _board(std::move(board)) {
 }
 
 void Battle::startBattle() {
-    // Call-once: re-announcing would duplicate the UI's units, since
-    // UnitPlacedEvent creates a widget per emission.
     if (_started)
         return;
     _started = true;
 
-    _battleInfoChangedEventBus.emit({_info});
-    _actionPointsChangedEventBus.emit({_actionPoints});
-    _firePointsChangedEventBus.emit({_firePoints});
-    _drawPileRefilledEventBus.emit({});
-    for (const auto& [id, unit] : _units) {
-        std::optional<HexCoord> at = _board.find(id);
-        if (at)
-            _unitPlacedEventBus.emit({id, *at, unit});
+    for (const Card& card : _captain.getDeck().getCards()) {
+        _drawPile.addCard(card.getId());
     }
-    _captain.announce();
+
+    _drawPile.shuffle();
+
+    std::vector<uint32_t> placedUnitIds = _board.getPlacedOccupantIds(BoardTileType::Unit);
+    std::vector<uint32_t> placedConstructionIds =
+        _board.getPlacedOccupantIds(BoardTileType::Construction);
+
+    std::vector<Unit> selectedUnits;
+    selectedUnits.reserve(placedUnitIds.size());
+    for (uint32_t id : placedUnitIds)
+        selectedUnits.push_back(*_captain.getRoster().getUnit(id));
+
+    std::vector<Construction> selectedConstructions;
+    selectedConstructions.reserve(placedConstructionIds.size());
+    for (uint32_t id : placedConstructionIds)
+        selectedConstructions.push_back(*_captain.getRoster().getConstruction(id));
+
+    _battleStartedEventBus.emit(
+        {_captain.getHealth(),
+         _captain.getDeck(),
+         _board,
+         std::move(selectedUnits),
+         std::move(selectedConstructions),
+         _actionPoints,
+         _info}
+    );
+}
+
+void Battle::startTacticalPhase() {
+    _tacticalPhaseStartedEventBus.emit(
+        {_captain.getHealth(),
+         _captain.getRoster(),
+         _captain.getDeck(),
+         _board,
+         _captain.getMaxActionPointCount(),
+         _captain.getFirePointCount(),
+         _info}
+    );
 }
 
 void Battle::startPlayerTurn() {
@@ -118,24 +138,19 @@ Result<TargetReq, PlayError> Battle::tryPlayCard(uint32_t cardId) {
     return Result<TargetReq, PlayError>::ok({1, {5, 6, 7}});
 }
 
-Result<uint32_t, BoardError> Battle::placeUnit(const Unit& unit, HexCoord at) {
-    const uint32_t id = _nextUnitId;
-    BoardResult placed = _board.place(at, id, unit.getTeam(), BoardTileType::Unit);
-    if (placed.isErr())
-        return Result<uint32_t, BoardError>::err(placed.error());
-    ++_nextUnitId;
-    _units.emplace(id, unit);
-    _unitPlacedEventBus.emit({id, at, unit});
-    return Result<uint32_t, BoardError>::ok(id);
-}
+void Battle::placeUnit(uint32_t unitId, HexCoord at) {
+    const Unit* unit = _captain.getRoster().getUnit(unitId);
 
-Unit* Battle::findUnit(uint32_t unitId) {
-    auto it = _units.find(unitId);
-    return it == _units.end() ? nullptr : &it->second;
+    if (unit == nullptr)
+        return;
+
+    _board.place(at, unit->getId(), unit->getTeam(), BoardTileType::Unit);
+    _unitPlacedEventBus.emit({unit->getId(), at, *unit});
 }
 
 BoardResult Battle::moveUnit(uint32_t unitId, HexCoord to) {
-    Unit* unit = findUnit(unitId);
+    const Unit* unit = _captain.getRoster().getUnit(unitId);
+
     std::optional<HexCoord> from = _board.find(unitId);
     if (!unit || !from)
         return BoardResult::err(BoardError::NoOccupant);
@@ -147,7 +162,7 @@ BoardResult Battle::moveUnit(uint32_t unitId, HexCoord to) {
 }
 
 int Battle::dealDamageToUnit(uint32_t unitId, int amount) {
-    Unit* unit = findUnit(unitId);
+    Unit* unit = _captain.getRoster().getUnit(unitId);
     if (!unit)
         return 0;
     int excess = unit->takeDamage(amount);
@@ -158,13 +173,14 @@ int Battle::dealDamageToUnit(uint32_t unitId, int amount) {
     std::optional<HexCoord> at = _board.find(unitId);
     if (at)
         _board.remove(*at);
-    _units.erase(unitId);
+
+    _units.erase(std::find(_units.begin(), _units.end(), unitId));
     _unitDiedEventBus.emit({unitId, at.value_or(HexCoord{})});
     return excess;
 }
 
 void Battle::attackWithUnit(uint32_t attackerId) {
-    Unit* attacker = findUnit(attackerId);
+    Unit* attacker = _captain.getRoster().getUnit(attackerId);
     std::optional<HexCoord> from = _board.find(attackerId);
     if (!attacker || !from)
         return;
@@ -180,7 +196,7 @@ void Battle::attackWithUnit(uint32_t attackerId) {
         if (!targetTile)
             return;
         uint32_t targetId = *targetTile->occupantId();
-        Unit* target = findUnit(targetId);
+        Unit* target = _captain.getRoster().getUnit(targetId);
         if (!target || target->getTeam() == attacker->getTeam())
             return; // the lane is blocked by a friendly or a non-unit occupant
         at = targetTile->coord();
@@ -189,7 +205,7 @@ void Battle::attackWithUnit(uint32_t attackerId) {
 }
 
 void Battle::defendWithUnit(uint32_t defenderId) {
-    Unit* unit = findUnit(defenderId);
+    Unit* unit = _captain.getRoster().getUnit(defenderId);
     if (!unit)
         return;
     unit->defend();
@@ -197,7 +213,7 @@ void Battle::defendWithUnit(uint32_t defenderId) {
 }
 
 void Battle::healUnit(uint32_t unitId, int amount) {
-    Unit* unit = findUnit(unitId);
+    Unit* unit = _captain.getRoster().getUnit(unitId);
     if (!unit)
         return;
     unit->heal(amount);

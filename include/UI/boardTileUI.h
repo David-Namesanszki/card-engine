@@ -23,6 +23,15 @@ class BoardTileUI {
     // Where a unit standing on this tile is placed (see BoardUI::unitPosition).
     AnchorPoint unitAnchor;
 
+    void addOccupant(uint32_t id) {
+        _occupant.emplace(id);
+    }
+
+    std::optional<uint32_t> occupant() const {
+        return _occupant;
+    }
+
   private:
+    std::optional<uint32_t> _occupant = std::nullopt;
     HexCoord _coord;
 };

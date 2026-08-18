@@ -19,5 +19,9 @@ std::vector<InputEvent> InputSystem::getInputs() {
     if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         events.push_back(InputEvent{InputEventType::LeftReleased, mouse});
 
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0.0f)
+        events.push_back(InputEvent{InputEventType::Scrolled, mouse, wheel});
+
     return events;
 }

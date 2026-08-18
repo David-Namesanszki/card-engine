@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/health.h"
+#include "core/attributes/health.h"
 
 struct HealthChangedEvent {
     Health health;

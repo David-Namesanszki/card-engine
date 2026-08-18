@@ -7,7 +7,8 @@ enum class InputEventType {
     LeftDown,
     LeftReleased,
     RightClicked,
-    MouseMoved
+    MouseMoved,
+    Scrolled
 };
 
 inline std::string to_string(InputEventType type) {
@@ -22,6 +23,8 @@ inline std::string to_string(InputEventType type) {
         return "RightClicked";
     case InputEventType::MouseMoved:
         return "MouseMoved";
+    case InputEventType::Scrolled:
+        return "Scrolled";
     }
     return "Unknown";
 }
@@ -29,4 +32,5 @@ inline std::string to_string(InputEventType type) {
 struct InputEvent {
     InputEventType type;
     Vector2 position;
+    float scrollDelta = 0.0f; // wheel notches; meaningful only for Scrolled
 };

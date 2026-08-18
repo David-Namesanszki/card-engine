@@ -14,4 +14,11 @@ public:
         for (auto& listener : listeners)
             listener(event);
     }
+
+    // Drops every listener. Owners expose this so subscribers that are about
+    // to be destroyed (a scene being switched away) don't leave dangling
+    // callbacks behind.
+    void clear() {
+        listeners.clear();
+    }
 };
