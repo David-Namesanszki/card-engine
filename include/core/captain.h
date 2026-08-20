@@ -20,22 +20,10 @@ class Captain {
         int firePointCount
     );
 
-    void addCard(
-        CardType type,
-        const std::string& name,
-        const std::string& description,
-        const std::string& splashArt,
-        int fireCost
-    );
+    void addCard(Card);
 
-    void addUnit(
-        const std::string& name,
-        TeamType team,
-        Health health,
-        int attackPower,
-        int defensePower
-    );
-    void addConstruction(const std::string& name, TeamType team, Durability durability);
+    void addUnit(Unit unit);
+    void addConstruction(Construction construction);
 
     void takeDamage(int amount);
     bool isDead() const;

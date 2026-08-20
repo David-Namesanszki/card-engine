@@ -22,26 +22,28 @@ void Battle::startBattle() {
 
     _drawPile.shuffle();
 
-    std::vector<uint32_t> placedUnitIds = _board.getPlacedOccupantIds(BoardTileType::Unit);
-    std::vector<uint32_t> placedConstructionIds =
-        _board.getPlacedOccupantIds(BoardTileType::Construction);
+    std::vector<uint32_t> boardPieceIds = _board.getBoardPieceIds();
+    std::vector<Unit> units;
+    std::vector<Construction> constructions;
 
-    std::vector<Unit> selectedUnits;
-    selectedUnits.reserve(placedUnitIds.size());
-    for (uint32_t id : placedUnitIds)
-        selectedUnits.push_back(*_captain.getRoster().getUnit(id));
+    for (uint32_t id : boardPieceIds) {
+        auto* boardPiece = _captain.getRoster().getBoardPiece(id);
 
-    std::vector<Construction> selectedConstructions;
-    selectedConstructions.reserve(placedConstructionIds.size());
-    for (uint32_t id : placedConstructionIds)
-        selectedConstructions.push_back(*_captain.getRoster().getConstruction(id));
+        if (auto* unit = dynamic_cast<Unit*>(boardPiece)) {
+            units.push_back(*unit);
+        } else if (auto* construction = dynamic_cast<Construction*>(boardPiece)) {
+            constructions.push_back(*construction);
+        } else {
+            throw;
+        }
+    }
 
     _battleStartedEventBus.emit(
         {_captain.getHealth(),
          _captain.getDeck(),
          _board,
-         std::move(selectedUnits),
-         std::move(selectedConstructions),
+         std::move(units),
+         std::move(constructions),
          _actionPoints,
          _info}
     );
@@ -138,65 +140,60 @@ Result<TargetReq, PlayError> Battle::tryPlayCard(uint32_t cardId) {
     return Result<TargetReq, PlayError>::ok({1, {5, 6, 7}});
 }
 
-void Battle::placeUnit(uint32_t unitId, HexCoord at) {
-    const Unit* unit = _captain.getRoster().getUnit(unitId);
+void Battle::placeBoardPiece(uint32_t id, HexCoord at) {
+    const BoardPiece* boardPiece = _captain.getRoster().getBoardPiece(id);
 
-    if (unit == nullptr)
+    _board.place(at, boardPiece->getId(), boardPiece->getTeam(), boardPiece->getType());
+    _boardPiecePlacedEventBus.emit({id, at});
+}
+
+void Battle::moveBoardPiece(uint32_t id, HexCoord to) {
+    std::optional<HexCoord> from = _board.find(id);
+
+    if (!from.has_value()) {
         return;
+    }
 
-    _board.place(at, unit->getId(), unit->getTeam(), BoardTileType::Unit);
-    _unitPlacedEventBus.emit({unit->getId(), at, *unit});
+    _board.move(*from, to);
+    _boardPieceMovedEventBus.emit({id, *from, to});
 }
 
-BoardResult Battle::moveUnit(uint32_t unitId, HexCoord to) {
-    const Unit* unit = _captain.getRoster().getUnit(unitId);
-
-    std::optional<HexCoord> from = _board.find(unitId);
-    if (!unit || !from)
-        return BoardResult::err(BoardError::NoOccupant);
-    BoardResult moved = _board.move(*from, to, unit->getTeam(), BoardTileType::Unit);
-    if (moved.isErr())
-        return moved;
-    _unitMovedEventBus.emit({unitId, *from, to});
-    return BoardResult::ok();
-}
-
-int Battle::dealDamageToUnit(uint32_t unitId, int amount) {
-    Unit* unit = _captain.getRoster().getUnit(unitId);
+int Battle::dealDamageToUnit(uint32_t id, int amount) {
+    Unit* unit = dynamic_cast<Unit*>(_captain.getRoster().getBoardPiece(id));
     if (!unit)
         return 0;
-    int excess = unit->takeDamage(amount);
-    _unitDamagedEventBus.emit({unitId, unit->getHealth(), unit->getArmor().getCurrentArmor()});
 
+    int excess = unit->takeDamage(amount);
+    _unitDamagedEventBus.emit({id, unit->getHealth(), unit->getArmor().getCurrentArmor()});
     if (!unit->isDead())
         return excess;
-    std::optional<HexCoord> at = _board.find(unitId);
-    if (at)
+    std::optional<HexCoord> at = _board.find(id);
+    if (at.has_value()) {
         _board.remove(*at);
+        _unitDiedEventBus.emit({id, *at});
+    }
 
-    _units.erase(std::find(_units.begin(), _units.end(), unitId));
-    _unitDiedEventBus.emit({unitId, at.value_or(HexCoord{})});
     return excess;
 }
 
-void Battle::attackWithUnit(uint32_t attackerId) {
-    Unit* attacker = _captain.getRoster().getUnit(attackerId);
-    std::optional<HexCoord> from = _board.find(attackerId);
+void Battle::attackWithUnit(uint32_t id) {
+    std::optional<HexCoord> from = _board.find(id);
+    Unit* attacker = dynamic_cast<Unit*>(_captain.getRoster().getBoardPiece(id));
+
     if (!attacker || !from)
         return;
 
     HexCoord dir = _board.attackDirectionFor(attacker->getTeam());
-
-    // Overkill pierces: damage beyond a victim's armor + health carries on to
-    // the next unit down the lane.
     int damage = attacker->getAttackPower();
     HexCoord at = *from;
+
     while (damage > 0) {
-        const BoardTile* targetTile = _board.firstOccupiedTileAlong(at, dir);
+        const BoardPieceBoardTile* targetTile = _board.firstOccupiedTileAlong(at, dir);
         if (!targetTile)
             return;
-        uint32_t targetId = *targetTile->occupantId();
-        Unit* target = _captain.getRoster().getUnit(targetId);
+
+        uint32_t targetId = *targetTile->getBoardPieceId();
+        Unit* target = dynamic_cast<Unit*>(_captain.getRoster().getBoardPiece(targetId));
         if (!target || target->getTeam() == attacker->getTeam())
             return; // the lane is blocked by a friendly or a non-unit occupant
         at = targetTile->coord();
@@ -204,18 +201,18 @@ void Battle::attackWithUnit(uint32_t attackerId) {
     }
 }
 
-void Battle::defendWithUnit(uint32_t defenderId) {
-    Unit* unit = _captain.getRoster().getUnit(defenderId);
-    if (!unit)
+void Battle::defendWithUnit(uint32_t id) {
+    Unit* defender = dynamic_cast<Unit*>(_captain.getRoster().getBoardPiece(id));
+    if (!defender)
         return;
-    unit->defend();
-    _unitDefendedEventBus.emit({defenderId, unit->getArmor().getCurrentArmor()});
+    defender->defend();
+    _unitDefendedEventBus.emit({id, defender->getArmor().getCurrentArmor()});
 }
 
-void Battle::healUnit(uint32_t unitId, int amount) {
-    Unit* unit = _captain.getRoster().getUnit(unitId);
-    if (!unit)
+void Battle::healUnit(uint32_t id, int amount) {
+    Unit* healed = dynamic_cast<Unit*>(_captain.getRoster().getBoardPiece(id));
+    if (!healed)
         return;
-    unit->heal(amount);
-    _unitHealedEventBus.emit({unitId, unit->getHealth()});
+    healed->heal(amount);
+    _unitHealedEventBus.emit({id, healed->getHealth()});
 }

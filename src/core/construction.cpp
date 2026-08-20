@@ -1,8 +1,7 @@
-#include "core/construction.h"
+#include "core/entities/boardPieces/construction.h"
 
 Construction::Construction(std::string name, TeamType team, Durability durability)
-    : _name(std::move(name)),
-      _team(team),
+    : BoardPiece(name, team, BoardPieceType::Construction),
       _durability(durability) {
 }
 

@@ -12,56 +12,38 @@ void Roster::addUnit(
     int attackPower,
     int defensePower
 ) {
-    if (_units.size() + _constructions.size() >= _maxSize)
+    if (_boardPieces.size() >= _maxSize)
         return;
-    _units.emplace_back(std::move(name), team, health, attackPower, defensePower);
-}
-
-void Roster::removeUnit(uint32_t id) {
-    auto it = std::find_if(_units.begin(), _units.end(), [id](const Unit& unit) {
-        return unit.getId() == id;
-    });
-
-    if (it != _units.end())
-        _units.erase(it);
+    _boardPieces.push_back(
+        std::make_unique<Unit>(std::move(name), team, health, attackPower, defensePower)
+    );
 }
 
 void Roster::addConstruction(std::string name, TeamType team, Durability durability) {
-    if (_units.size() + _constructions.size() >= _maxSize)
+    if (_boardPieces.size() >= _maxSize)
         return;
-    _constructions.emplace_back(std::move(name), team, durability);
+    _boardPieces.push_back(std::make_unique<Construction>(std::move(name), team, durability));
 }
 
-void Roster::removeConstruction(uint32_t id) {
+void Roster::removeBoardPiece(uint32_t id) {
     auto it = std::find_if(
-        _constructions.begin(), _constructions.end(), [id](const Construction& construction) {
-            return construction.getId() == id;
-        }
+        _boardPieces.begin(), _boardPieces.end(),
+        [id](const std::unique_ptr<BoardPiece>& piece) { return piece->getId() == id; }
     );
 
-    if (it != _constructions.end())
-        _constructions.erase(it);
+    if (it != _boardPieces.end())
+        _boardPieces.erase(it);
 }
 
-const Unit* Roster::getUnit(uint32_t id) const {
-    auto it = std::find_if(_units.begin(), _units.end(), [id](const Unit& unit) {
-        return unit.getId() == id;
-    });
-    return it == _units.end() ? nullptr : &*it;
-}
-
-Unit* Roster::getUnit(uint32_t id) {
-    auto it = std::find_if(_units.begin(), _units.end(), [id](const Unit& unit) {
-        return unit.getId() == id;
-    });
-    return it == _units.end() ? nullptr : &*it;
-}
-
-const Construction* Roster::getConstruction(uint32_t id) const {
+const BoardPiece* Roster::getBoardPiece(uint32_t id) const {
     auto it = std::find_if(
-        _constructions.begin(), _constructions.end(), [id](const Construction& construction) {
-            return construction.getId() == id;
+        _boardPieces.begin(), _boardPieces.end(), [id](const std::unique_ptr<BoardPiece>& piece) {
+            return piece->getId() == id;
         }
     );
-    return it == _constructions.end() ? nullptr : &*it;
+    return it == _boardPieces.end() ? nullptr : it->get();
+}
+
+BoardPiece* Roster::getBoardPiece(uint32_t id) {
+    return const_cast<BoardPiece*>(static_cast<const Roster*>(this)->getBoardPiece(id));
 }

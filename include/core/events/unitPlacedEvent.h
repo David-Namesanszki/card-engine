@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include "engine/hexCoord.h"
-#include "core/unit.h"
+#include "core/entities/boardPieces/unit.h"
 
 struct UnitPlacedEvent {
     uint32_t unitId;

@@ -4,7 +4,7 @@
 #include <list>
 #include <string>
 #include <vector>
-#include "core/boardTile.h"
+#include "core/entities/boardTiles/boardTile.h"
 #include "UI/boardUI.h"
 #include "UI/configs/boardUIConfig.h"
 #include "UI/panels/battleInfoPanelUI.h"

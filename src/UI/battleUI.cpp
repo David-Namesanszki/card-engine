@@ -38,6 +38,18 @@ BattleUI::BattleUI(
 
 #pragma region Domain
 
+void startBattle(
+    Health captainHealth,
+    Deck deck,
+    Board board,
+    std::vector<Unit> units,
+    std::vector<Construction> constructions,
+    ActionPoint actionPoint,
+    BattleInfo battleInfo
+) {
+    _captain
+}
+
 void BattleUI::refillDrawPile(int drawPileSize, int discardPileSize) {
     _drawPile.setCount(drawPileSize);
     _discardPile.setCount(discardPileSize);

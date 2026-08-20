@@ -1,4 +1,4 @@
-#include "deck.h"
+#include "core/deck.h"
 
 void Deck::addCard(
     CardType type,
@@ -7,7 +7,7 @@ void Deck::addCard(
     const std::string& splashArt,
     int fireCost
 ) {
-    _cards.emplace_back(type, name, description, fireCost);
+    _cards.emplace_back(type, name, description, splashArt, fireCost);
 };
 
 bool Deck::removeCard(uint32_t cardId) {
@@ -15,8 +15,10 @@ bool Deck::removeCard(uint32_t cardId) {
         return card.getId() == cardId;
     });
 
-    if (it != _cards.end())
-        _cards.erase(it);
+    if (it == _cards.end())
+        return false;
+    _cards.erase(it);
+    return true;
 }
 
 const Card* Deck::getCard(uint32_t id) const {

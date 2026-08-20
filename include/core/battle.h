@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include "core/cardPile.h"
 #include "core/board.h"
-#include "core/unit.h"
+#include "core/entities/boardPieces/unit.h"
 #include "core/events/unitPlacedEvent.h"
 #include "core/events/unitMovedEvent.h"
 #include "core/events/unitDamagedEvent.h"
@@ -23,6 +23,8 @@
 #include "core/events/firePointsChangedEvent.h"
 #include "core/events/tacticalPhaseStartedEvent.h"
 #include "core/events/battleStartedEvent.h"
+#include "core/events/boardPieceMovedEvent.h"
+#include "core/events/boardPiecePlacedEvent.h"
 #include "core/captain.h"
 #include "core/roster.h"
 #include "core/targetReq.h"
@@ -60,8 +62,8 @@ class Battle {
     void attackWithUnit(uint32_t attackerId);
     void defendWithUnit(uint32_t defenderId);
     int dealDamageToUnit(uint32_t unitId, int amount);
-    void placeUnit(uint32_t unitId, HexCoord at);
-    BoardResult moveUnit(uint32_t unitId, HexCoord to);
+    void placeBoardPiece(uint32_t unitId, HexCoord at);
+    void moveBoardPiece(uint32_t unitId, HexCoord to);
 
 #pragma region Getters
 
@@ -165,4 +167,6 @@ class Battle {
     EventBus<Roster> _rosterChangedEventBus;
     EventBus<TacticalPhaseStartedEvent> _tacticalPhaseStartedEventBus;
     EventBus<BattleStartedEvent> _battleStartedEventBus;
+    EventBus<BoardPiecePlacedEvent> _boardPiecePlacedEventBus;
+    EventBus<BoardPieceMovedEvent> _boardPieceMovedEventBus;
 };

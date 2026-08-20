@@ -71,13 +71,15 @@ int main() {
     SceneManager scenes;
     // The run opens on the tactical (deployment) view; it hands the battle
     // over to BattleScene itself.
-    scenes.requestChange(std::make_unique<TacticalScene>(
-        captain,
-        battle,
-        scenes,
-        playerUnitId ? std::optional<uint32_t>(playerUnitId.value()) : std::nullopt,
-        enemyUnitId ? std::optional<uint32_t>(enemyUnitId.value()) : std::nullopt
-    ));
+    scenes.requestChange(
+        std::make_unique<TacticalScene>(
+            captain,
+            battle,
+            scenes,
+            playerUnitId ? std::optional<uint32_t>(playerUnitId.value()) : std::nullopt,
+            enemyUnitId ? std::optional<uint32_t>(enemyUnitId.value()) : std::nullopt
+        )
+    );
     scenes.applyPending();
     // The scene wired itself in its constructor; announce the opening state.
     battle.startTacticalPhase();

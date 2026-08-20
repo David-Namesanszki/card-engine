@@ -1,15 +1,16 @@
 #pragma once
 
 #include <cstdint>
-#include "core/boardTile.h"
+#include "core/entities/boardTiles/boardTile.h"
 #include "engine/components/transformComponent.h"
 #include "engine/components/spriteComponent.h"
 #include "engine/components/hitBoxComponent.h"
 #include "UI/anchorPoint.h"
+#include "core/entities/boardPieces/boardPiece.h"
 
 class BoardTileUI {
   public:
-    BoardTileUI(HexCoord coord, BoardTileType type, TeamType team);
+    BoardTileUI(HexCoord coord, BoardTileType tileType, BoardPieceType pieceType, TeamType team);
 
     // A tile is a location, so the hex coordinate is its identity — the same
     // vocabulary the core Board speaks. There is no separate tile id.

@@ -5,8 +5,8 @@
 #include "core/attributes/actionPoints.h"
 #include "core/battleInfo.h"
 #include "core/attributes/health.h"
-#include "core/unit.h"
-#include "core/construction.h"
+#include "core/entities/boardPieces/unit.h"
+#include "core/entities/boardPieces/construction.h"
 
 struct BattleStartedEvent {
     Health captainHealth;

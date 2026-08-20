@@ -1,8 +1,7 @@
-#include "core/unit.h"
+#include "core/entities/boardPieces/unit.h"
 
 Unit::Unit(std::string name, TeamType team, Health health, int attackPower, int defensePower)
-    : _name(std::move(name)),
-      _team(team),
+    : BoardPiece(name, team, BoardPieceType::Unit),
       _health(health),
       _armor(defensePower),
       _attackPower(attackPower) {

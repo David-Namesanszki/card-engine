@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/card.h"
+#include "core/entities/cards/card.h"
 #include <vector>
 
 class Deck {
