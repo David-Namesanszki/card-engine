@@ -5,5 +5,4 @@
 
 struct UnitDiedEvent {
     uint32_t unitId;
-    HexCoord at;
 };

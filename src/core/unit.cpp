@@ -1,7 +1,14 @@
 #include "core/entities/boardPieces/unit.h"
 
-Unit::Unit(std::string name, TeamType team, Health health, int attackPower, int defensePower)
-    : BoardPiece(name, team, BoardPieceType::Unit),
+Unit::Unit(
+    std::string name,
+    TeamType team,
+    Health health,
+    HexCoord place,
+    int attackPower,
+    int defensePower
+)
+    : BoardPiece(name, team, BoardPieceType::Unit, place),
       _health(health),
       _armor(defensePower),
       _attackPower(attackPower) {

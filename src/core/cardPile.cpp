@@ -2,13 +2,15 @@
 #include <algorithm>
 #include <random>
 
-CardPile::CardPile(int limit) : _limit(limit) {}
+CardPile::CardPile(int limit)
+    : _limit(limit) {
+}
 
-bool CardPile::addCard(uint32_t card) {
+bool CardPile::addCard(Card card) {
     if (_limit != -1 && _cards.size() >= static_cast<size_t>(_limit))
         return false;
 
-    _cards.push_back(card);
+    _cards.push_back(std::move(card));
     return true;
 }
 
@@ -43,14 +45,14 @@ bool CardPile::transfer(CardPile& other) {
     return true;
 }
 
-uint32_t CardPile::popLast() {
-    uint32_t card = _cards.back();
+Card CardPile::popLast() {
+    Card card = _cards.back();
     _cards.pop_back();
     return card;
 }
 
-std::vector<uint32_t> CardPile::clearOut() {
-    std::vector<uint32_t> cards = _cards;
+std::vector<Card> CardPile::clearOut() {
+    std::vector<Card> cards = _cards;
     empty();
     return cards;
 }

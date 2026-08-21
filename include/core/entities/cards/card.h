@@ -5,13 +5,7 @@
 #include <functional>
 #include "entity.h"
 
-enum class CardType {
-    Command,
-    Weather,
-    Nightmare,
-    Dream,
-    Fire
-};
+#include "core/types/cardType.h"
 
 class Card : public Entity {
   public:

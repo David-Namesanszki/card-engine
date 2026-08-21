@@ -72,30 +72,6 @@ void RenderSystem::draw(const TransformComponent& transform, const SpriteCompone
     DrawTexturePro(tex, source, dest, origin, transform.worldRotation() * RAD2DEG, sprite.color);
 }
 
-void RenderSystem::renderBattle(const BattleUI& battle) {
-    // Backgrounds first, then cards on top.
-    renderBoard(battle.board());
-
-    renderCaptain(battle.captain());
-    for (const auto& unit : battle.units())
-        renderUnit(unit);
-
-    renderCardPile(battle.drawPile());
-    renderCardPile(battle.discardPile());
-    renderHand(battle.leftHand());
-    renderHand(battle.rightHand());
-
-    for (const auto& card : battle.cards())
-        renderCard(card);
-
-    renderResourcePanel(battle.firePanel());
-    renderActionPointsPanel(battle.actionPointsPanel());
-    renderProgressPanel(battle.progressPanel());
-    renderBattleInfoPanel(battle.battleInfoPanel());
-
-    renderButton(battle.endTurnButton());
-}
-
 void RenderSystem::renderTactical(const TacticalUI& tactical) {
     renderBoard(tactical.board());
     for (const auto& unit : tactical.units())
@@ -112,9 +88,7 @@ void RenderSystem::renderRoster(const RosterUI& roster) {
 
     // Entries scrolled outside the viewport are clipped away.
     Rectangle viewport = scrollView.viewportRect();
-    BeginScissorMode(
-        (int)viewport.x, (int)viewport.y, (int)viewport.width, (int)viewport.height
-    );
+    BeginScissorMode((int)viewport.x, (int)viewport.y, (int)viewport.width, (int)viewport.height);
     for (const auto& unit : roster.units())
         renderUnit(unit);
     for (const auto& construction : roster.constructions())
@@ -211,22 +185,4 @@ void RenderSystem::renderBattleInfoPanel(const BattleInfoPanelUI& battleInfoPane
     drawText(battleInfoPanel.difficultyText.transform, battleInfoPanel.difficultyText.text);
     drawText(battleInfoPanel.whoseTurnText.transform, battleInfoPanel.whoseTurnText.text);
     drawText(battleInfoPanel.battleLengthText.transform, battleInfoPanel.battleLengthText.text);
-}
-
-void RenderSystem::renderTargetOverlay(
-    const BattleUI& battle,
-    const std::vector<uint32_t>& targetableCardIds
-) {
-    // Darken everything drawn so far this frame...
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 150});
-
-    // ...then redraw only the targetable cards on top, so they pop back to
-    // full brightness against the darkened background.
-    for (const auto& card : battle.cards()) {
-        bool targetable =
-            std::find(targetableCardIds.begin(), targetableCardIds.end(), card.id()) !=
-            targetableCardIds.end();
-        if (targetable)
-            draw(card.transform, card.sprite);
-    }
 }

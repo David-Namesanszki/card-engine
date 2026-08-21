@@ -1,7 +1,7 @@
 #include "scenes/battleScene.h"
 #include "raylib.h"
-#include "core/battle.h"
 #include "core/captain.h"
+#include "core/battle.h"
 #include "engine/systems/renderSystem.h"
 
 // Core speaks in enums; the info panel displays strings. The mapping lives on
@@ -22,17 +22,19 @@ static const char* difficultyLabel(BattleDifficultyType difficulty) {
     return "Unknown";
 }
 
-BattleScene::BattleScene(
-    Captain& captain,
-    Battle& battle,
-    SceneManager& scenes,
-    std::optional<uint32_t> demoPlayerUnitId,
-    std::optional<uint32_t> demoEnemyUnitId
-)
-    : _battle(battle),
-      _scenes(scenes),
-      _demoPlayerUnitId(demoPlayerUnitId),
-      _demoEnemyUnitId(demoEnemyUnitId) {
+BattleScene::BattleScene(BattleLayout layout)
+    : _drawPile(layout.drawPileConfig),
+      _discardPile(layout.discardPileConfig),
+      _leftHand(layout.leftHandConfig),
+      _rightHand(layout.rightHandConfig),
+      _board(layout.boardConfig),
+      _firePointsPanel(layout.firePanelConfig),
+      _actionPointsPanel(layout.actionPointsConfig),
+      _progressPanel(layout.progressPanelConfig),
+      _battleInfoPanel(layout.battleInfoPanelConfig),
+      _endTurnButton(layout.endTurnButtonConfig),
+      _captain(layout.captainConfig),
+      _layout(layout) {
     // ---- Configs ----
     // Base battle layout. Each element owns a (width, height) fraction of the
     // 1280x720 screen and is centred in its region; sprites stretch to fill it.
@@ -121,146 +123,188 @@ BattleScene::BattleScene(
     // Units on the board: shared readout layout; per-unit sprite textures are
     // chosen at placement.
     UnitUIConfig unitConfig;
+}
 
-    _ui = std::make_unique<BattleUI>(
-        battleConfig,
-        boardConfig,
-        battle.getBoard().tiles(),
-        captainConfig,
-        firePanelConfig,
-        actionPointsConfig,
-        progressPanelConfig,
-        battleInfoPanelConfig,
-        endTurnButtonConfig,
-        leftHandConfig,
-        rightHandConfig,
-        discardPileConfig,
-        drawPileConfig,
-        unitConfig
-    );
+void BattleScene::start(const Captain& captain, const Battle& battle) {
+    _cardFlowSystem = {captain.getDeck(), captain.getLeftHandSize(), captain.getRightHandSize()};
+    _cardFlowSystem.onCardDrawn([this](CardDrawnEvent e) {
+        CardUI c(e.card.getId());
+        c.transform = _drawPile.getAnchorPoint().transform.asWorldTransform();
+        c.sprite.texture = _layout.cardConfig.texture;
+        c.hitbox.setRectangle(c.sprite.size);
 
-    // The UI only reacts to core events. The events don't carry the texture or
-    // pile sizes the UI methods need, so each lambda reads those from the core's
-    // getters (and routes discards to the correct hand).
-    // TODO: card texture is a placeholder until the event/core carries splash art.
-    battle.onCardDrawn([this](CardDrawnEvent e) {
-        _ui->drawCard(e.cardId, "assets/cards/FireBall.png", _battle.getDrawPile().size());
+        _cards.push_back(c);
+        _drawPile.setCount(e.drawPileSize);
+        _leftHand.addCardId(e.cardId, 0);
+        // reorganizeHand(_leftHand);
     });
-    battle.onCardDiscarded([this](CardDiscardedEvent e) {
+    _cardFlowSystem.onCardDiscarded([this](CardDiscardedEvent e) {
         int discardSize = _battle.getDiscardPile().size();
-        if (e.hand == HandType::Left)
-            _ui->discardFromLeftHand(e.cardId, discardSize);
-        else
-            _ui->discardFromRightHand(e.cardId, discardSize);
+        if (e.hand == HandType::Left) {
+            _leftHand.removeCardId(e.cardId);
+            // takeCard(cardId);
+            _discardPile.setCount(e.discardPileSize);
+            // reorganizeHand(_leftHand);
+        } else {
+            _rightHand.removeCardId(e.cardId);
+            // takeCard(cardId);
+            _discardPile.setCount(e.discardPileSize);
+            // reorganizeHand(_leftHand);
+        }
     });
-    battle.onCardTransferredToRight([this](CardTransferredToRightEvent e) {
-        _ui->transferCardToRight(e.cardId);
+    _cardFlowSystem.onCardTransferredToRight([this](CardTransferredToRightEvent e) {
+        _leftHand.removeCardId(e.cardId);
+        // reorganizeHand(_leftHand);
+        _rightHand.addCardId(e.cardId, 0);
+        // reorganizeHand(_rightHand);
     });
-    battle.onDrawPileRefilled([this](DrawPileRefilledEvent) {
-        _ui->refillDrawPile(_battle.getDrawPile().size(), _battle.getDiscardPile().size());
-    });
-    battle.onBattleInfoChanged([this](BattleInfoChangedEvent e) {
-        _ui->setDifficulty(difficultyLabel(e.info.difficulty));
-        _ui->setWhoseTurn(turnTypeLabel(e.info.turnType));
-        _ui->setBattleLength(e.info.turnCount);
-    });
-    battle.onActionPointsChanged([this](ActionPointsChangedEvent e) {
-        _ui->setActionPoints(e.actionPoints.current, e.actionPoints.max);
-    });
-    battle.onFirePointsChanged([this](FirePointsChangedEvent e) {
-        _ui->setFireCount(e.firePoints);
-    });
-    captain.onHealthChanged([this](HealthChangedEvent e) {
-        _ui->setCaptainHealth(e.health.current, e.health.max);
+    _cardFlowSystem.onDrawPileRefilled([this](DrawPileRefilledEvent e) {
+        _drawPile.setCount(e.drawPileSize);
+        _discardPile.setCount(e.discardPileSize);
     });
 
-    // Unit events. UnitPlacedEvent carries a snapshot of the unit, so the UI
-    // reads stats straight from the payload; positions come from the board's
-    // hex-to-screen mapping.
-    // TODO: every unit is a viking until per-unit-type art (and a unit kind
-    // in core to select it) exists.
-    battle.onUnitPlaced([this](UnitPlacedEvent e) {
-        const char* texture = "assets/units/viking.png";
-        _ui->placeUnit(
-            e.unitId,
-            e.unit.getName(),
-            texture,
-            _ui->board().unitPosition(e.at),
-            e.unit.getHealth().current,
-            e.unit.getAttackPower(),
-            e.unit.getArmor().getDefensivePower()
-        );
+    _turnSystem = {};
+    _turnSystem.onTurnCountIncremented([this](TurnCountIncrementedEvent e) {
+        _battleInfoPanel.setBattleLength(e.turnCount);
     });
-    battle.onUnitMoved([this](UnitMovedEvent e) {
-        _ui->moveUnit(e.unitId, _ui->board().unitPosition(e.to));
+    _turnSystem.onWhoseTurnchanged([this](WhoseTurnChangedEvent e) {
+        _battleInfoPanel.setWhoseTurn(e.whoseTurn);
     });
-    battle.onUnitDamaged([this](UnitDamagedEvent e) {
-        _ui->setUnitHealth(e.unitId, e.health.current);
-        _ui->setUnitArmor(e.unitId, e.currentArmor);
+
+    _battleResourceSystem = {captain.getMaxActionPointCount(), captain.getFirePointCount()};
+    _battleResourceSystem.onCurrentActionPointsChanged([this](CurrentActionPointsChangedEvent e) {
+        _actionPointsPanel.setCurrentActionPoints(e.currentActionPoints);
     });
-    battle.onUnitHealed([this](UnitHealedEvent e) {
-        _ui->setUnitHealth(e.unitId, e.health.current);
+    _battleResourceSystem.onMaxActionPointsChanged([this](MaxActionPointsChangedEvent e) {
+        _actionPointsPanel.setMaxActionPoints(e.maxActionPoints);
     });
-    battle.onUnitDefended([this](UnitDefendedEvent e) {
-        _ui->setUnitArmor(e.unitId, e.currentArmor);
+    _battleResourceSystem.onCurrentFirePointsChanged([this](CurrentFirePointsChangedEvent e) {
+        _firePointsPanel.setFireCount(e.currentFirePoints);
     });
-    battle.onUnitDied([this](UnitDiedEvent e) { _ui->removeUnit(e.unitId); });
+
+    _effectSystem = {battle.boardPieces, battle.boardTiles};
+    _effectSystem.onUnitDamaged([this](UnitDamagedEvent e) {
+        auto it = std::find_if(_units.begin(), _units.end(), [e](const UnitUI& unit) {
+            return unit.id() == e.id;
+        });
+
+        if (it == _units.end())
+            return;
+
+        it->setArmor(e.currentArmor);
+        it->setHealth(e.currentHealth);
+    });
+    _effectSystem.onUnitHealed([this](UnitHealedEvent e) {
+        auto it = std::find_if(_units.begin(), _units.end(), [e](const UnitUI& unit) {
+            return unit.id() == e.id;
+        });
+
+        if (it == _units.end())
+            return;
+
+        it->setHealth(e.currentHealth);
+    });
+    _effectSystem.onUnitDefended([this](UnitDefendedEvent e) {
+        auto it = std::find_if(_units.begin(), _units.end(), [e](const UnitUI& unit) {
+            return unit.id() == e.id;
+        });
+
+        if (it == _units.end())
+            return;
+
+        it->setArmor(e.currentArmor);
+    });
+    _effectSystem.onUnitDied([this](UnitDiedEvent e) {
+        auto it = std::find_if(_units.begin(), _units.end(), [e](const UnitUI& unit) {
+            return unit.id() == e.id;
+        });
+
+        if (it == _units.end())
+            return;
+
+        _units.erase(it);
+    });
 }
 
 void BattleScene::update(float) {
     if (IsKeyPressed(KEY_D)) {
-        _battle.endPlayerTurn();
+        _cardFlowSystem.drawCard(5);
+        _battleResourceSystem.refillActionPoints();
+        _turnSystem.incrementTurnCount();
+        _turnSystem.changeWhoseTurn();
     }
 
     if (IsKeyPressed(KEY_T)) {
-        _battle.startPlayerTurn();
+        _cardFlowSystem.discardLeftHand();
+        _cardFlowSystem.discardRightHand();
+        _turnSystem.changeWhoseTurn();
     }
 
-    // Combat demo keys, driving the first lane's units.
-    if (IsKeyPressed(KEY_A) && _demoPlayerUnitId)
-        _battle.attackWithUnit(*_demoPlayerUnitId);
-    if (IsKeyPressed(KEY_G) && _demoEnemyUnitId)
-        _battle.defendWithUnit(*_demoEnemyUnitId);
-    if (IsKeyPressed(KEY_H) && _demoEnemyUnitId)
-        _battle.healUnit(*_demoEnemyUnitId, 2);
-
-    for (const InputEvent& event : _inputSystem.getInputs()) {
-        std::optional<HitResult> hit = _hitTestSystem.hitTest(event.position, *_ui);
-        if (!hit)
-            continue;
-        IntentType intentType = _intentSystem.interpret(event.type, hit->type);
-        if (intentType == IntentType::TryPlayCard) {
-            _playedCardId = hit->cardId;
-            auto result = _battle.tryPlayCard(*_playedCardId);
-            if (!result) {
-                TraceLog(LOG_INFO, "Can't play card: %d", result.error());
-            } else if (result.value().neededTargets == 0) {
-                _battle.playCard(*_playedCardId, {});
-            } else {
-                _targetSystem.init(result.value().possibleTargets, result.value().neededTargets);
-                _intentSystem.changeState(InputState::Target);
-            }
-        } else if (intentType == IntentType::SelectTarget) {
-            _targetSystem.tryAddTarget(hit->cardId);
-            if (_targetSystem.isFilled()) {
-                _battle.playCard(*_playedCardId, _targetSystem.getSelectedTargets());
-                _targetSystem.reset();
-                _intentSystem.changeState(InputState::Normal);
-            }
-        } else if (intentType == IntentType::CancelCardPlay) {
-            _playedCardId.reset();
-            _targetSystem.reset();
-            _intentSystem.changeState(InputState::Normal);
-        } else if (intentType == IntentType::EndTurn) {
-            _battle.endPlayerTurn();
-        }
-    }
+    // for (const InputEvent& event : _inputSystem.getInputs()) {
+    //     std::optional<HitResult> hit = _hitTestSystem.hitTest(event.position, *_ui);
+    //     if (!hit)
+    //         continue;
+    //     IntentType intentType = _intentSystem.interpret(event.type, hit->type);
+    //     if (intentType == IntentType::TryPlayCard) {
+    //         _playedCardId = hit->cardId;
+    //         auto result = _battle.tryPlayCard(*_playedCardId);
+    //         if (!result) {
+    //             TraceLog(LOG_INFO, "Can't play card: %d", result.error());
+    //         } else if (result.value().neededTargets == 0) {
+    //             _battle.playCard(*_playedCardId, {});
+    //         } else {
+    //             _targetSystem.init(result.value().possibleTargets, result.value().neededTargets);
+    //             _intentSystem.changeState(InputState::Target);
+    //         }
+    //     } else if (intentType == IntentType::SelectTarget) {
+    //         _targetSystem.tryAddTarget(hit->cardId);
+    //         if (_targetSystem.isFilled()) {
+    //             _battle.playCard(*_playedCardId, _targetSystem.getSelectedTargets());
+    //             _targetSystem.reset();
+    //             _intentSystem.changeState(InputState::Normal);
+    //         }
+    //     } else if (intentType == IntentType::CancelCardPlay) {
+    //         _playedCardId.reset();
+    //         _targetSystem.reset();
+    //         _intentSystem.changeState(InputState::Normal);
+    //     } else if (intentType == IntentType::EndTurn) {
+    //         _battle.endPlayerTurn();
+    //     }
+    // }
 }
 
 void BattleScene::render(RenderSystem& renderer) {
-    renderer.renderBattle(*_ui);
-    if (_intentSystem.getInputState() == InputState::Target)
-        renderer.renderTargetOverlay(*_ui, _targetSystem.getPossibleTargets());
+    renderBoard(_board);
+
+    renderCaptain(_captain);
+    for (const auto& unit : _units)
+        renderUnit(unit);
+
+    renderCardPile(_drawPile);
+    renderCardPile(_discardPile);
+    renderHand(_leftHand);
+    renderHand(_rightHand);
+
+    for (const auto& card : _cards)
+        renderCard(card);
+
+    renderResourcePanel(_firePointsPanel);
+    renderActionPointsPanel(_actionPointsPanel);
+    renderProgressPanel(_progressPanel);
+    renderBattleInfoPanel(_battleInfoPanel);
+
+    renderButton(_endTurnButton);
+    if (_intentSystem.getInputState() == InputState::Target) {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 150});
+
+        for (const auto& card : _cards) {
+            bool targetable =
+                std::find(targetableCardIds.begin(), targetableCardIds.end(), card.id()) !=
+                targetableCardIds.end();
+            if (targetable)
+                draw(card.transform, card.sprite);
+        }
+    }
 
     DrawText("T start turn   D end turn   A attack   G defend   H heal", 10, 10, 16, LIGHTGRAY);
 }

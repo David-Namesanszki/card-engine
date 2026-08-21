@@ -4,11 +4,7 @@
 #include <optional>
 #include "core/types/teamType.h"
 #include "engine/hexCoord.h"
-
-enum class BoardTileType {
-    Effect,
-    BoardPiece,
-};
+#include "core/types/boardTileType.h"
 
 class BoardTile {
   public:
@@ -25,7 +21,9 @@ class BoardTile {
         return _team;
     }
 
-    virtual ~BoardTile() = default;
+    BoardTileType type() const {
+        return _type;
+    }
 
   private:
     BoardTileType _type;

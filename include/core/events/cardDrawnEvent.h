@@ -3,5 +3,6 @@
 #include <cstdint>
 
 struct CardDrawnEvent {
-    uint32_t cardId;
+    Card card;
+    size_t drawPileSize;
 };

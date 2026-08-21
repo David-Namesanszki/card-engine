@@ -15,7 +15,8 @@ class ActionPointsPanelUI {
 
     // The panel starts with no pips and builds its row from the first event;
     // a later change of max rebuilds it (energy-granting effects).
-    void setActionPoints(int current, int max);
+    void setMaxActionPoints(int max);
+    void setCurrentActionPoints(int current);
 
     const std::vector<Pip>& pips() const {
         return _pips;
@@ -26,5 +27,6 @@ class ActionPointsPanelUI {
 
     ActionPointsPanelUIConfig _config;
     int _maxActionPoints = 0;
+    int _currentActionPoints = 0;
     std::vector<Pip> _pips;
 };

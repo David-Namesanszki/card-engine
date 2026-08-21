@@ -15,18 +15,12 @@ class RenderSystem {
   public:
     ~RenderSystem();
 
-    void renderBattle(const BattleUI& battle);
     void renderTactical(const TacticalUI& tactical);
 
     // Darkens the whole screen, then redraws the given cards at full
     // brightness so only they stand out. Call after render(), and only while
     // targeting is in progress (this method has no notion of interaction state).
-    void renderTargetOverlay(
-        const BattleUI& battle,
-        const std::vector<uint32_t>& targetableCardIds
-    );
 
-  private:
     // Loads `path` once and caches the GPU texture for reuse.
     const Texture2D& texture(const std::string& path);
 

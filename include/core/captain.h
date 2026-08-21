@@ -8,7 +8,7 @@
 #include "core/roster.h"
 #include "engine/eventBus.h"
 #include "core/events/healthChangedEvent.h"
-#include "core/deck.h"
+#include "core/cardPile.h"
 
 class Captain {
   public:
@@ -18,18 +18,31 @@ class Captain {
         size_t rosterSize,
         int maxActionPointCount,
         int firePointCount
-    );
+    )
+        : _name(std::move(name)),
+          _health(health),
+          _deck(),
+          _roster(rosterSize),
+          _currentFirePointCount(firePointCount),
+          _maxActionPointCount(maxActionPointCount) {
+    }
 
-    void addCard(Card);
+    void addCard(Card card) {
+        _deck.addCard(std::move(card));
+    }
 
-    void addUnit(Unit unit);
-    void addConstruction(Construction construction);
+    void addUnit(Unit unit) {
+        _roster.addUnit(unit);
+    }
+    void addConstruction(Construction construction) {
+        _roster.addConstruction(construction);
+    }
 
-    void takeDamage(int amount);
-    bool isDead() const;
-
-    void onHealthChanged(std::function<void(HealthChangedEvent)> cb) {
-        _healthChangedEventBus.subscribe(cb);
+    void takeDamage(int amount) {
+        _health.damage(amount);
+    }
+    bool isDead() const {
+        return _health.isDead();
     }
 
 #pragma region Getters
@@ -40,7 +53,7 @@ class Captain {
     const Health& getHealth() const {
         return _health;
     }
-    const Deck& getDeck() const {
+    const CardPile& getDeck() const {
         return _deck;
     }
     const Roster& getRoster() const {
@@ -59,15 +72,21 @@ class Captain {
         return _currentFirePointCount;
     }
 
+    size_t getRightHandSize() {
+        return _rightHandSize;
+    }
+    size_t getLeftHandSize() {
+        return _leftHandSize;
+    }
 #pragma endregion
 
   private:
     std::string _name;
     Health _health;
-    Deck _deck;
+    CardPile _deck;
     Roster _roster;
     int _maxActionPointCount;
     int _currentFirePointCount;
-
-    EventBus<HealthChangedEvent> _healthChangedEventBus;
+    size_t _leftHandSize;
+    size_t _rightHandSize;
 };

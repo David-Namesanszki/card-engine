@@ -6,10 +6,18 @@
 #include "core/attributes/armor.h"
 #include "core/types/teamType.h"
 #include "core/entities/boardPieces/boardPiece.h"
+#include "engine/hexCoord.h"
 
 class Unit : public BoardPiece {
   public:
-    Unit(std::string name, TeamType team, Health health, int attackPower, int defensePower);
+    Unit(
+        std::string name,
+        TeamType team,
+        Health health,
+        HexCoord place,
+        int attackPower,
+        int defensePower
+    );
 
     int takeDamage(int amount);
     void heal(int amount);

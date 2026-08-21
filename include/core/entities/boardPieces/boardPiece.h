@@ -11,8 +11,9 @@ enum class BoardPieceType {
 
 class BoardPiece : public Entity {
   public:
-    BoardPiece(std::string name, TeamType team, BoardPieceType type)
+    BoardPiece(std::string name, TeamType team, BoardPieceType type, HexCoord place)
         : _name(std::move(name)),
+          _place(place),
           _team(team),
           _type(type) {};
 
@@ -27,9 +28,14 @@ class BoardPiece : public Entity {
         return _type;
     }
 
+    HexCoord getPlace() const {
+        return _place;
+    }
+
     virtual ~BoardPiece() = default;
 
   private:
+    HexCoord _place;
     BoardPieceType _type;
     std::string _name;
     TeamType _team;

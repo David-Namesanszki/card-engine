@@ -7,18 +7,18 @@ ActionPointsPanelUI::ActionPointsPanelUI(ActionPointsPanelUIConfig config)
       _config(config) {
 }
 
-void ActionPointsPanelUI::setActionPoints(int current, int max) {
-    if (max != _maxActionPoints) {
-        _maxActionPoints = max;
-        _pips.assign(max, Pip{});
-        for (int i = 0; i < max; i++) {
+void ActionPointsPanelUI::setCurrentActionPoints(int current) {
+    if (current != _maxActionPoints) {
+        _maxActionPoints = current;
+        _pips.assign(current, Pip{});
+        for (int i = 0; i < current; i++) {
             _pips[i].transform.position = slotPosition(i);
             _pips[i].sprite.texture = _config.availableTexture;
             _pips[i].sprite.size = _config.pipSize;
         }
     }
 
-    int spentCount = std::clamp(max - current, 0, _maxActionPoints);
+    int spentCount = std::clamp(_maxActionPoints - current, 0, _maxActionPoints);
     for (int i = 0; i < (int)_pips.size(); i++)
         _pips[i].sprite.texture =
             (i < spentCount) ? _config.spentTexture : _config.availableTexture;

@@ -11,8 +11,8 @@ class Roster {
   public:
     explicit Roster(size_t maxSize);
 
-    void addUnit(std::string name, TeamType team, Health health, int attackPower, int defensePower);
-    void addConstruction(std::string name, TeamType team, Durability durability);
+    void addUnit(Unit unit);
+    void addConstruction(Construction construction);
 
     void removeBoardPiece(uint32_t id);
 

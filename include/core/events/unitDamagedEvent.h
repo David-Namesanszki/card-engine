@@ -5,6 +5,6 @@
 
 struct UnitDamagedEvent {
     uint32_t unitId;
-    Health health;
+    int currentHealth;
     int currentArmor;
 };
