@@ -1,25 +1,35 @@
 #pragma once
 
-#include "UI/battleUI.h"
-#include "UI/tacticalUI.h"
-#include "engine/components/transformComponent.h"
 #include "engine/components/spriteComponent.h"
+#include "engine/components/textComponent.h"
+#include "engine/components/transformComponent.h"
 #include "raylib.h"
 #include <string>
 #include <unordered_map>
-#include <vector>
-#include <cstdint>
-#include "engine/components/textComponent.h"
+
+// Every widget below is taken by const reference only, so a forward
+// declaration is all this header needs. The implementation includes the real
+// headers; consumers already have the widget they are asking us to draw.
+class ActionPointsPanelUI;
+class BattleInfoPanelUI;
+class BoardUI;
+class ButtonUI;
+class CaptainUI;
+class CardPileUI;
+class CardUI;
+class ConstructionUI;
+class FireResourcePanelUI;
+class FixedSlotHandUI;
+class ProgressPanelUI;
+class RosterUI;
+class TacticalUI;
+class UnitUI;
 
 class RenderSystem {
   public:
     ~RenderSystem();
 
     void renderTactical(const TacticalUI& tactical);
-
-    // Darkens the whole screen, then redraws the given cards at full
-    // brightness so only they stand out. Call after render(), and only while
-    // targeting is in progress (this method has no notion of interaction state).
 
     // Loads `path` once and caches the GPU texture for reuse.
     const Texture2D& texture(const std::string& path);

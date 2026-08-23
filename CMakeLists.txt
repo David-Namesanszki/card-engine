@@ -15,7 +15,7 @@ FetchContent_MakeAvailable(raylib)
 
 include_directories(include)
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
 add_executable(card-engine ${SOURCES})
 target_link_libraries(card-engine raylib)

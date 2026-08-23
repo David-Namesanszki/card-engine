@@ -7,8 +7,9 @@
 
 class CardUI {
   public:
-    explicit CardUI(uint32_t id)
+    explicit CardUI(uint32_t id, std::string texture)
         : _id(id) {
+        sprite.texture = texture;
     }
     uint32_t id() const {
         return _id;

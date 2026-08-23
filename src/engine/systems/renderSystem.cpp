@@ -1,4 +1,21 @@
 #include "engine/systems/renderSystem.h"
+
+#include "UI/boardUI.h"
+#include "UI/buttonUI.h"
+#include "UI/captainUI.h"
+#include "UI/cardPileUI.h"
+#include "UI/cardUI.h"
+#include "UI/constructionUI.h"
+#include "UI/fixedSlotHandUI.h"
+#include "UI/panels/actionPointsPanelUI.h"
+#include "UI/panels/battleInfoPanelUI.h"
+#include "UI/panels/fireResourcePanelUI.h"
+#include "UI/panels/progressPanelUI.h"
+#include "UI/rosterUI.h"
+#include "UI/scrollViewUI.h"
+#include "UI/tacticalUI.h"
+#include "UI/unitUI.h"
+
 #include <algorithm>
 
 RenderSystem::~RenderSystem() {
@@ -83,17 +100,17 @@ void RenderSystem::renderTactical(const TacticalUI& tactical) {
 }
 
 void RenderSystem::renderRoster(const RosterUI& roster) {
-    const ScrollViewUI& scrollView = roster.scrollView();
-    draw(scrollView.transform, scrollView.background);
+    // const ScrollViewUI& scrollView = roster.scrollView();
+    // draw(scrollView.transform, scrollView.background);
 
-    // Entries scrolled outside the viewport are clipped away.
-    Rectangle viewport = scrollView.viewportRect();
-    BeginScissorMode((int)viewport.x, (int)viewport.y, (int)viewport.width, (int)viewport.height);
-    for (const auto& unit : roster.units())
-        renderUnit(unit);
-    for (const auto& construction : roster.constructions())
-        renderConstruction(construction);
-    EndScissorMode();
+    // // Entries scrolled outside the viewport are clipped away.
+    // Rectangle viewport = scrollView.viewportRect();
+    // BeginScissorMode((int)viewport.x, (int)viewport.y, (int)viewport.width,
+    // (int)viewport.height); for (const auto& unit : roster.units())
+    //     renderUnit(unit);
+    // for (const auto& construction : roster.constructions())
+    //     renderConstruction(construction);
+    // EndScissorMode();
 }
 
 void RenderSystem::renderBoard(const BoardUI& board) {

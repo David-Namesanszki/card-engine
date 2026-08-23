@@ -18,20 +18,6 @@ FixedSlotHandUI::FixedSlotHandUI(HandUIConfig config)
     }
 }
 
-const std::list<uint32_t>& FixedSlotHandUI::getCardIds() const {
-    return _cardIds;
-}
-
-void FixedSlotHandUI::addCardId(uint32_t cardId, size_t index) {
-    _cardIds.insert(std::next(_cardIds.begin(), index), cardId);
-}
-
-void FixedSlotHandUI::removeCardId(uint32_t cardId) {
-    auto it = std::find(_cardIds.begin(), _cardIds.end(), cardId);
-    if (it != _cardIds.end())
-        _cardIds.erase(it);
-}
-
 const AnchorPoint& FixedSlotHandUI::getPosition(size_t index) const {
     return _slots[index];
 }

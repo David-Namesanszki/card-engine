@@ -1,4 +1,4 @@
-#pragma ocne
+#pragma once
 
 enum class BattleDifficultyType {
     Minor,

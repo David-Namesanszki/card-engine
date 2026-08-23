@@ -14,8 +14,10 @@ bool CardPile::addCard(Card card) {
     return true;
 }
 
-bool CardPile::removeCard(uint32_t card) {
-    auto it = std::find(_cards.begin(), _cards.end(), card);
+bool CardPile::removeCard(uint32_t id) {
+    auto it = std::find_if(_cards.begin(), _cards.end(), [id](const Card& card) {
+        return card.getId() == id;
+    });
 
     if (it == _cards.end())
         return false;

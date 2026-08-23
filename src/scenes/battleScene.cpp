@@ -1,188 +1,77 @@
 #include "scenes/battleScene.h"
 #include "raylib.h"
-#include "core/captain.h"
-#include "core/battle.h"
+#include "UI/labels.h"
 #include "engine/systems/renderSystem.h"
+#include <utility>
 
-// Core speaks in enums; the info panel displays strings. The mapping lives on
-// the UI side of the boundary.
-static const char* turnTypeLabel(TurnType turnType) {
-    return turnType == TurnType::Player ? "Player" : "Enemy";
-}
+// Init-list order must mirror the declaration order in the header: _layout is
+// initialized before the UI members, which then read their configs out of it.
+BattleScene::BattleScene(
+    SceneManager& scenes,
+    BattleData data,
+    BattleLayout layout,
+    BattleConfig config
+)
+    : _scenes(scenes),
+      _layout(std::move(layout)),
 
-static const char* difficultyLabel(BattleDifficultyType difficulty) {
-    switch (difficulty) {
-    case BattleDifficultyType::Minor:
-        return "Minor";
-    case BattleDifficultyType::Major:
-        return "Major";
-    case BattleDifficultyType::Boss:
-        return "Boss";
-    }
-    return "Unknown";
-}
+      _inputSystem(),
+      _hitTestSystem(),
+      _targetSystem(),
+      _intentSystem(),
 
-BattleScene::BattleScene(BattleLayout layout)
-    : _drawPile(layout.drawPileConfig),
-      _discardPile(layout.discardPileConfig),
-      _leftHand(layout.leftHandConfig),
-      _rightHand(layout.rightHandConfig),
-      _board(layout.boardConfig),
-      _firePointsPanel(layout.firePanelConfig),
-      _actionPointsPanel(layout.actionPointsConfig),
-      _progressPanel(layout.progressPanelConfig),
-      _battleInfoPanel(layout.battleInfoPanelConfig),
-      _endTurnButton(layout.endTurnButtonConfig),
-      _captain(layout.captainConfig),
-      _layout(layout) {
-    // ---- Configs ----
-    // Base battle layout. Each element owns a (width, height) fraction of the
-    // 1280x720 screen and is centred in its region; sprites stretch to fill it.
-    //
-    //   left column  (0.1 wide): BattleInfo 0.3 | BattleLog 0.3 | gap | DrawPile 0.2
-    //   centre       (0.8 wide): Board 0.7, then LeftHand 0.3 / Captain 0.2 / RightHand 0.3
-    //   right column (0.1 wide): ProgressPanel 0.3 | EndTurn 0.1 | FirePanel 0.1 +
-    //                            ActionPoints 0.1 | DiscardPile 0.2, with three even
-    //                            48px gaps between the four slots
-    BattleUIConfig battleConfig;
+      _cardFlowSystem(std::move(data.deck), data.leftHandSize, data.rightHandSize),
+      _turnSystem(data.turnType),
+      _battleResourceSystem(data.maxActionPointCount, data.currentFirePointCount),
+      _effectSystem(std::move(data.selectedBoardPieces), std::move(data.boardTiles)),
 
-    // Battle info panel: left column, top (0.1 x 0.3).
-    BattleInfoPanelUIConfig battleInfoPanelConfig;
-    battleInfoPanelConfig.transform.position = {64.0f, 108.0f};
-    battleInfoPanelConfig.background.texture = "assets/BattleInfoPanel.png";
-    battleInfoPanelConfig.background.size = {128.0f, 216.0f};
+      _handLayoutSystem(
+          _layout.leftHandConfig,
+          _layout.rightHandConfig,
+          _layout.drawPileConfig,
+          _layout.discardPileConfig
+      ),
 
-    // TODO: BattleLog (0.1 x 0.3) sits below BattleInfo in the layout, but no
-    // widget exists for it yet.
+      _battleResourceViewSystem(
+          _layout.firePanelConfig,
+          _layout.actionPointsConfig,
+          data.maxActionPointCount,
+          data.currentFirePointCount
+      ),
 
-    // Draw pile: left column, bottom (0.1 x 0.2).
-    CardPileUIConfig drawPileConfig;
-    drawPileConfig.transform.position = {64.0f, 648.0f};
-    drawPileConfig.sprite.texture = "assets/DrawPile.png";
-    drawPileConfig.sprite.size = {128.0f, 144.0f};
+      _turnViewSystem(_layout.battleInfoPanelConfig, data.difficulty, data.turnType),
 
-    // Board: centre column, upper region (0.8 x 0.7).
-    BoardUIConfig boardConfig;
-    boardConfig.transform.position = {640.0f, 252.0f};
-
-    // Bottom row of the centre column (0.3 tall): left hand, captain, right hand.
-    // Cards sit on an arc spanning handPos.x +/- 200, with the middle slot
-    // pulled toward controlOffset.y.
-    HandUIConfig leftHandConfig;
-    leftHandConfig.transform.position = {320.0f, 612.0f}; // (0.3 x 0.3)
-    leftHandConfig.slotCount = 5;
-    leftHandConfig.sprite.texture = "assets/LeftHandCover.png";
-    leftHandConfig.sprite.size = {384.0f, 99.0f}; // region width, cover aspect (~520x134)
-
-    CaptainUIConfig captainConfig;
-    captainConfig.transform.position = {640.0f, 612.0f}; // (0.2 x 0.3)
-    captainConfig.sprite.texture = "assets/Captain.png";
-    captainConfig.sprite.size = {256.0f, 216.0f};
-
-    HandUIConfig rightHandConfig;
-    rightHandConfig.transform.position = {960.0f, 612.0f}; // (0.3 x 0.3)
-    rightHandConfig.slotCount = 5;
-    rightHandConfig.sprite.texture = "assets/RightHandCover.png";
-    rightHandConfig.sprite.size = {384.0f, 99.0f};
-
-    // Progress panel: right column, top (0.1 x 0.3).
-    ProgressPanelUIConfig progressPanelConfig;
-    progressPanelConfig.transform.position = {1216.0f, 108.0f};
-    progressPanelConfig.background.texture = "assets/ProgressPanel.png";
-    progressPanelConfig.background.size = {128.0f, 216.0f};
-
-    // End turn button: right column, second slot (0.1 x 0.1).
-    ButtonUIConfig endTurnButtonConfig;
-    endTurnButtonConfig.transform.position = {1216.0f, 300.0f};
-    endTurnButtonConfig.sprite.texture = "assets/EndTurnButton.png";
-    endTurnButtonConfig.sprite.size = {128.0f, 72.0f};
-
-    // The layout's BattleResourcePanel slot (0.1 x 0.2) is two stacked panels:
-    // fire resources on top, action points below, each 0.1 x 0.1.
-    FireResourcePanelUIConfig firePanelConfig;
-    firePanelConfig.transform.position = {1216.0f, 420.0f};
-    firePanelConfig.background.texture = "assets/FirePanel.png";
-    firePanelConfig.background.size = {128.0f, 72.0f};
-
-    ActionPointsPanelUIConfig actionPointsConfig;
-    actionPointsConfig.transform.position = {1216.0f, 492.0f};
-    actionPointsConfig.background.texture = "assets/action_point_panel.png";
-    actionPointsConfig.background.size = {128.0f, 72.0f};
-    actionPointsConfig.availableTexture = "assets/action_point.png";
-    actionPointsConfig.spentTexture = "assets/action_point_spent.png";
-    actionPointsConfig.lineStartOffset = {-40.0f, 0.0f};
-    actionPointsConfig.lineEndOffset = {40.0f, 0.0f};
-    actionPointsConfig.pipSize = {24.0f, 24.0f};
-
-    // Discard pile: right column, bottom (0.1 x 0.2).
-    CardPileUIConfig discardPileConfig;
-    discardPileConfig.transform.position = {1216.0f, 648.0f};
-    discardPileConfig.sprite.texture = "assets/DiscardPile.png";
-    discardPileConfig.sprite.size = {128.0f, 144.0f};
-
-    // Units on the board: shared readout layout; per-unit sprite textures are
-    // chosen at placement.
-    UnitUIConfig unitConfig;
-}
-
-void BattleScene::start(const Captain& captain, const Battle& battle) {
-    _cardFlowSystem = {captain.getDeck(), captain.getLeftHandSize(), captain.getRightHandSize()};
+      _board(_layout.boardConfig),
+      _progressPanel(_layout.progressPanelConfig),
+      _endTurnButton(_layout.endTurnButtonConfig),
+      _captain(_layout.captainConfig) {
     _cardFlowSystem.onCardDrawn([this](CardDrawnEvent e) {
-        CardUI c(e.card.getId());
-        c.transform = _drawPile.getAnchorPoint().transform.asWorldTransform();
-        c.sprite.texture = _layout.cardConfig.texture;
-        c.hitbox.setRectangle(c.sprite.size);
-
-        _cards.push_back(c);
-        _drawPile.setCount(e.drawPileSize);
-        _leftHand.addCardId(e.cardId, 0);
-        // reorganizeHand(_leftHand);
+        _handLayoutSystem.drawCard(e.card.getId(), e.card.getSplashArt(), e.drawPileSize);
     });
     _cardFlowSystem.onCardDiscarded([this](CardDiscardedEvent e) {
-        int discardSize = _battle.getDiscardPile().size();
-        if (e.hand == HandType::Left) {
-            _leftHand.removeCardId(e.cardId);
-            // takeCard(cardId);
-            _discardPile.setCount(e.discardPileSize);
-            // reorganizeHand(_leftHand);
-        } else {
-            _rightHand.removeCardId(e.cardId);
-            // takeCard(cardId);
-            _discardPile.setCount(e.discardPileSize);
-            // reorganizeHand(_leftHand);
-        }
+        _handLayoutSystem.discardCard(e.hand, e.cardId, e.discardPileSize);
     });
     _cardFlowSystem.onCardTransferredToRight([this](CardTransferredToRightEvent e) {
-        _leftHand.removeCardId(e.cardId);
-        // reorganizeHand(_leftHand);
-        _rightHand.addCardId(e.cardId, 0);
-        // reorganizeHand(_rightHand);
+        _handLayoutSystem.transferCard(e.cardId);
     });
     _cardFlowSystem.onDrawPileRefilled([this](DrawPileRefilledEvent e) {
-        _drawPile.setCount(e.drawPileSize);
-        _discardPile.setCount(e.discardPileSize);
+        _handLayoutSystem.refillDrawPile(e.drawPileSize, e.discardPileSize);
     });
 
-    _turnSystem = {};
-    _turnSystem.onTurnCountIncremented([this](TurnCountIncrementedEvent e) {
-        _battleInfoPanel.setBattleLength(e.turnCount);
-    });
-    _turnSystem.onWhoseTurnchanged([this](WhoseTurnChangedEvent e) {
-        _battleInfoPanel.setWhoseTurn(e.whoseTurn);
+    _turnSystem.onTurnAdvanced([this](TurnAdvancedEvent e) {
+        _turnViewSystem.advanceTurn(e.whoseTurn, e.turnCount);
     });
 
-    _battleResourceSystem = {captain.getMaxActionPointCount(), captain.getFirePointCount()};
-    _battleResourceSystem.onCurrentActionPointsChanged([this](CurrentActionPointsChangedEvent e) {
-        _actionPointsPanel.setCurrentActionPoints(e.currentActionPoints);
-    });
-    _battleResourceSystem.onMaxActionPointsChanged([this](MaxActionPointsChangedEvent e) {
-        _actionPointsPanel.setMaxActionPoints(e.maxActionPoints);
-    });
-    _battleResourceSystem.onCurrentFirePointsChanged([this](CurrentFirePointsChangedEvent e) {
-        _firePointsPanel.setFireCount(e.currentFirePoints);
+    _battleResourceSystem.onActionPointsRefilled([this](ActionPointsRefilledEvent e) {
+        _battleResourceViewSystem.refillActionPoints(e.current);
     });
 
-    _effectSystem = {battle.boardPieces, battle.boardTiles};
+    _battleResourceSystem.onResourcesSpent([this](ResourcesSpentEvent e) {
+        _battleResourceViewSystem.spendResources(
+            e.actionCost, e.actionPointsRemaining, e.fireCost, e.firePointsRemaining
+        );
+    });
+
     _effectSystem.onUnitDamaged([this](UnitDamagedEvent e) {
         auto it = std::find_if(_units.begin(), _units.end(), [e](const UnitUI& unit) {
             return unit.id() == e.id;
@@ -224,20 +113,92 @@ void BattleScene::start(const Captain& captain, const Battle& battle) {
 
         _units.erase(it);
     });
+
+    subscribeLogging();
+}
+
+// One tracing listener per core event. EventBus is multicast, so these ride
+// alongside the widget subscriptions above without disturbing them, and the
+// whole block can be dropped by deleting this call.
+void BattleScene::subscribeLogging() {
+    _cardFlowSystem.onCardDrawn([](CardDrawnEvent e) {
+        TraceLog(LOG_INFO, "[card] drawn      id=%u drawPile=%zu", e.card.getId(), e.drawPileSize);
+    });
+    _cardFlowSystem.onCardDiscarded([](CardDiscardedEvent e) {
+        TraceLog(
+            LOG_INFO,
+            "[card] discarded  id=%u discardPile=%zu hand=%s",
+            e.cardId,
+            e.discardPileSize,
+            handTypeLabel(e.hand)
+        );
+    });
+    _cardFlowSystem.onCardTransferredToRight([](CardTransferredToRightEvent e) {
+        TraceLog(LOG_INFO, "[card] ->right    id=%u", e.cardId);
+    });
+    _cardFlowSystem.onDrawPileRefilled([](DrawPileRefilledEvent e) {
+        TraceLog(
+            LOG_INFO,
+            "[card] refilled   drawPile=%zu discardPile=%zu",
+            e.drawPileSize,
+            e.discardPileSize
+        );
+    });
+
+    _turnSystem.onTurnAdvanced([](TurnAdvancedEvent e) {
+        TraceLog(
+            LOG_INFO,
+            "[turn] advanced   whoseTurn=%s count=%zu",
+            turnTypeLabel(e.whoseTurn),
+            e.turnCount
+        );
+    });
+
+    _battleResourceSystem.onActionPointsRefilled([](ActionPointsRefilledEvent e) {
+        TraceLog(LOG_INFO, "[res]  refilled   actionPts=%d/%d", e.current, e.max);
+    });
+    _battleResourceSystem.onResourcesSpent([](ResourcesSpentEvent e) {
+        TraceLog(
+            LOG_INFO,
+            "[res]  spent      ap-%d fire-%d  left ap=%d fire=%d",
+            e.actionCost,
+            e.fireCost,
+            e.actionPointsRemaining,
+            e.firePointsRemaining
+        );
+    });
+
+    _effectSystem.onUnitDamaged([](UnitDamagedEvent e) {
+        TraceLog(
+            LOG_INFO,
+            "[unit] damaged    id=%u hp=%d armor=%d",
+            e.id,
+            e.currentHealth,
+            e.currentArmor
+        );
+    });
+    _effectSystem.onUnitHealed([](UnitHealedEvent e) {
+        TraceLog(LOG_INFO, "[unit] healed     id=%u hp=%d", e.id, e.currentHealth);
+    });
+    _effectSystem.onUnitDefended([](UnitDefendedEvent e) {
+        TraceLog(LOG_INFO, "[unit] defended   id=%u armor=%d", e.id, e.currentArmor);
+    });
+    _effectSystem.onUnitDied([](UnitDiedEvent e) {
+        TraceLog(LOG_INFO, "[unit] died       id=%u", e.id);
+    });
 }
 
 void BattleScene::update(float) {
     if (IsKeyPressed(KEY_D)) {
-        _cardFlowSystem.drawCard(5);
+        _turnSystem.advanceTurn();
+        _cardFlowSystem.drawCard();
         _battleResourceSystem.refillActionPoints();
-        _turnSystem.incrementTurnCount();
-        _turnSystem.changeWhoseTurn();
     }
 
     if (IsKeyPressed(KEY_T)) {
         _cardFlowSystem.discardLeftHand();
         _cardFlowSystem.discardRightHand();
-        _turnSystem.changeWhoseTurn();
+        _turnSystem.advanceTurn();
     }
 
     // for (const InputEvent& event : _inputSystem.getInputs()) {
@@ -274,37 +235,39 @@ void BattleScene::update(float) {
 }
 
 void BattleScene::render(RenderSystem& renderer) {
-    renderBoard(_board);
+    _battleResourceViewSystem.render(renderer);
+    _turnViewSystem.render(renderer);
+    _handLayoutSystem.render(renderer);
+    renderer.renderBoard(_board);
 
-    renderCaptain(_captain);
+    renderer.renderCaptain(_captain);
     for (const auto& unit : _units)
-        renderUnit(unit);
+        renderer.renderUnit(unit);
 
-    renderCardPile(_drawPile);
-    renderCardPile(_discardPile);
-    renderHand(_leftHand);
-    renderHand(_rightHand);
+    renderer.renderProgressPanel(_progressPanel);
 
-    for (const auto& card : _cards)
-        renderCard(card);
-
-    renderResourcePanel(_firePointsPanel);
-    renderActionPointsPanel(_actionPointsPanel);
-    renderProgressPanel(_progressPanel);
-    renderBattleInfoPanel(_battleInfoPanel);
-
-    renderButton(_endTurnButton);
+    renderer.renderButton(_endTurnButton);
     if (_intentSystem.getInputState() == InputState::Target) {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 150});
 
-        for (const auto& card : _cards) {
-            bool targetable =
-                std::find(targetableCardIds.begin(), targetableCardIds.end(), card.id()) !=
-                targetableCardIds.end();
-            if (targetable)
-                draw(card.transform, card.sprite);
-        }
+        // for (const auto& card : _cards) {
+        //     bool targetable =
+        //         std::find(targetableCardIds.begin(), targetableCardIds.end(), card.id()) !=
+        //         targetableCardIds.end();
+        //     if (targetable)
+        //         draw(card.transform, card.sprite);
+        // }
     }
 
     DrawText("T start turn   D end turn   A attack   G defend   H heal", 10, 10, 16, LIGHTGRAY);
 }
+
+// ---- Layout ----
+// The base battle layout. Each element owns a (width, height) fraction of the
+// 1280x720 screen and is centred in its region; sprites stretch to fill it.
+//
+//   left column  (0.1 wide): BattleInfo 0.3 | BattleLog 0.3 | gap | DrawPile 0.2
+//   centre       (0.8 wide): Board 0.7, then LeftHand 0.3 / Captain 0.2 / RightHand 0.3
+//   right column (0.1 wide): ProgressPanel 0.3 | EndTurn 0.1 | FirePanel 0.1 +
+//                            ActionPoints 0.1 | DiscardPile 0.2, with three even
+//                            48px gaps between the four slots

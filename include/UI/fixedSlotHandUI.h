@@ -12,9 +12,6 @@ class FixedSlotHandUI {
   public:
     FixedSlotHandUI(HandUIConfig config = {});
 
-    const std::list<uint32_t>& getCardIds() const;
-    void addCardId(uint32_t cardId, size_t index);
-    void removeCardId(uint32_t cardId);
     const AnchorPoint& getPosition(size_t index) const;
     size_t slotCount() const {
         return _slots.size();
@@ -28,8 +25,8 @@ class FixedSlotHandUI {
     float slotT(int slot) const;
     Vector2 slotPosition(int slot) const;
     float slotRotation(int slot) const;
+    void reorganizeHand();
 
     HandUIConfig _config;
-    std::list<uint32_t> _cardIds;
     std::vector<AnchorPoint> _slots;
 };

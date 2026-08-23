@@ -13,7 +13,6 @@ TacticalUI::TacticalUI(
       _battleInfoPanel(battleInfoPanelConfig),
       _progressPanel(progressPanelConfig),
       _roster(rosterConfig) {
-    _units.emplace_back();
 }
 
 void TacticalUI::placeUnitOnBoard(uint32_t unitId, HexCoord coord) {

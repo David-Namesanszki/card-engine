@@ -1,4 +1,22 @@
 #include "core/systems/effectSystem.h"
+#include <utility>
+
+// Takes ownership of the pieces and re-keys both collections for lookup: the
+// pieces by entity id, the tiles by hex coordinate.
+EffectSystem::EffectSystem(
+    std::vector<std::unique_ptr<BoardPiece>> boardPieces,
+    std::vector<BoardTile> boardTiles
+) {
+    for (auto& piece : boardPieces) {
+        if (!piece)
+            continue;
+        uint32_t id = piece->getId(); // read before the move empties `piece`
+        _boardPieces.emplace(id, std::move(piece));
+    }
+
+    for (const BoardTile& tile : boardTiles)
+        _boardTiles.emplace(tile.coord(), tile);
+}
 
 void EffectSystem::moveBoardPiece(uint32_t id, HexCoord to) {
     const BoardPiece* boardPiece = _boardPieces.at(id).get();
@@ -45,7 +63,7 @@ void EffectSystem::healUnit(uint32_t id, int amount) {
     if (!healed)
         return;
     healed->heal(amount);
-    _unitHealedEventBus.emit({id, healed->getHealth()});
+    _unitHealedEventBus.emit({id, healed->getHealth().current});
 }
 
 // void EffectSystem::attackWithUnit(uint32_t id) {

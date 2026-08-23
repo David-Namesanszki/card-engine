@@ -42,8 +42,9 @@ Vector2 BoardUI::unitPosition(HexCoord coord) const {
 }
 
 void BoardUI::addUnit(uint32_t unitId, HexCoord coord) {
-    auto it =
-        std::find_if(_tiles.begin(), _tiles.end(), [coord](BoardTileUI b) { b.coord() == coord; });
+    auto it = std::find_if(_tiles.begin(), _tiles.end(), [coord](BoardTileUI b) {
+        return b.coord() == coord;
+    });
 
     if (it == _tiles.end())
         throw "There is no board tile with this coord: {}";
@@ -52,8 +53,9 @@ void BoardUI::addUnit(uint32_t unitId, HexCoord coord) {
 }
 
 void BoardUI::addConstruction(uint32_t constructionId, HexCoord coord) {
-    auto it =
-        std::find_if(_tiles.begin(), _tiles.end(), [coord](BoardTileUI b) { b.coord() == coord; });
+    auto it = std::find_if(_tiles.begin(), _tiles.end(), [coord](BoardTileUI b) {
+        return b.coord() == coord;
+    });
 
     if (it == _tiles.end())
         throw "There is no board tile with this coord: {}";

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "entity.h"
+#include "core/entities/entity.h"
 
 #include "core/types/cardType.h"
 
@@ -21,6 +21,10 @@ class Card : public Entity {
           _description(std::move(description)),
           _splashArt(std::move(splashArt)),
           _fireCost(fireCost) {
+    }
+
+    const std::string& getSplashArt() const {
+        return _splashArt;
     }
 
   private:

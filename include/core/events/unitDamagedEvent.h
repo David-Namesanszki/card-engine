@@ -4,7 +4,7 @@
 #include "core/attributes/health.h"
 
 struct UnitDamagedEvent {
-    uint32_t unitId;
+    uint32_t id;
     int currentHealth;
     int currentArmor;
 };

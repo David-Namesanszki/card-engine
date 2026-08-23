@@ -1,5 +1,4 @@
 #include "engine/systems/hitTestSystem.h"
-#include "UI/battleUI.h"
 #include <climits>
 
 bool pointInPolygon(const Vector2& p, const std::vector<Vector2>& poly) {
@@ -51,26 +50,27 @@ std::optional<HitResult> HitTestSystem::hitTest(
 ) const {
 
     std::optional<HitResult> best;
-    int bestLayer = INT_MIN;
+    // int bestLayer = INT_MIN;
 
-    auto consider = [&](EntityType type,
-                        const TransformComponent& t,
-                        const HitBoxComponent& hb,
-                        uint32_t cardId = 0) {
-        if (hit(testPosition, t, hb) && hb.layer >= bestLayer) {
-            bestLayer = hb.layer;
-            best = HitResult{type, cardId};
-        }
-    };
+    // auto consider = [&](EntityType type,
+    //                     const TransformComponent& t,
+    //                     const HitBoxComponent& hb,
+    //                     uint32_t cardId = 0) {
+    //     if (hit(testPosition, t, hb) && hb.layer >= bestLayer) {
+    //         bestLayer = hb.layer;
+    //         best = HitResult{type, cardId};
+    //     }
+    // };
 
-    consider(EntityType::DrawPile, battle.drawPile().transform, battle.drawPile().hitbox);
-    consider(EntityType::DiscardPile, battle.discardPile().transform, battle.discardPile().hitbox);
-    consider(EntityType::LeftHand, battle.leftHand().transform, battle.leftHand().hitbox);
-    consider(EntityType::RightHand, battle.rightHand().transform, battle.rightHand().hitbox);
-    for (const auto& card : battle.cards())
-        consider(EntityType::Card, card.transform, card.hitbox, card.id());
+    // consider(EntityType::DrawPile, battle.drawPile().transform, battle.drawPile().hitbox);
+    // consider(EntityType::DiscardPile, battle.discardPile().transform,
+    // battle.discardPile().hitbox); consider(EntityType::LeftHand, battle.leftHand().transform,
+    // battle.leftHand().hitbox); consider(EntityType::RightHand, battle.rightHand().transform,
+    // battle.rightHand().hitbox); for (const auto& card : battle.cards())
+    //     consider(EntityType::Card, card.transform, card.hitbox, card.id());
 
-    consider(EntityType::Button, battle.endTurnButton().transform, battle.endTurnButton().hitbox);
+    // consider(EntityType::Button, battle.endTurnButton().transform,
+    // battle.endTurnButton().hitbox);
 
     return best;
 }

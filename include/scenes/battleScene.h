@@ -1,19 +1,42 @@
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
+#include <list>
 #include <memory>
-#include <optional>
-#include "engine/scene.h"
-#include "engine/systems/inputSystem.h"
-#include "engine/systems/hitTestSystem.h"
-#include "engine/systems/targetSystem.h"
-#include "engine/systems/intentSystem.h"
-#include "core/systems/cardFlowSystem.h"
-#include "core/systems/battleResourceSystem.h"
-#include "core/systems/turnSystem.h"
+#include <vector>
 
-class Battle;
-class Captain;
+#include "engine/scene.h"
+#include "engine/systems/hitTestSystem.h"
+#include "engine/systems/inputSystem.h"
+#include "engine/systems/intentSystem.h"
+#include "engine/systems/targetSystem.h"
+
+#include "core/attributes/health.h"
+#include "core/cardPile.h"
+#include "core/entities/boardPieces/boardPiece.h"
+#include "core/entities/boardTile.h"
+#include "core/systems/battleResourceSystem.h"
+#include "core/systems/cardFlowSystem.h"
+#include "core/systems/effectSystem.h"
+#include "core/systems/turnSystem.h"
+#include "core/types/turnType.h"
+
+#include "UI/boardUI.h"
+#include "UI/buttonUI.h"
+#include "UI/captainUI.h"
+#include "UI/cardPileUI.h"
+#include "UI/cardUI.h"
+#include "UI/configs/cardUIConfig.h"
+#include "UI/fixedSlotHandUI.h"
+#include "UI/panels/actionPointsPanelUI.h"
+#include "UI/panels/battleInfoPanelUI.h"
+#include "UI/panels/fireResourcePanelUI.h"
+#include "UI/panels/progressPanelUI.h"
+#include "UI/unitUI.h"
+#include "UI/systems/handLayoutSystem.h"
+#include "UI/systems/battleResourceViewSystem.h"
+#include "UI/systems/turnViewSystem.h"
+
 class SceneManager;
 
 struct BattleLayout {
@@ -32,41 +55,72 @@ struct BattleLayout {
     CardUIConfig cardConfig;
 };
 
+// The stock 1280x720 battle layout — positions, textures and sizes for every
+// widget. See the region diagram above the definition in battleScene.cpp.
+BattleLayout defaultBattleLayout();
+
+struct BattleData {
+    CardPile deck;
+    size_t leftHandSize = 0;
+    size_t rightHandSize = 0;
+    TurnType turnType = TurnType::Player;
+    BattleDifficultyType difficulty;
+    Health captainHealth;
+    int maxActionPointCount = 0;
+    int currentFirePointCount = 0;
+    std::vector<std::unique_ptr<BoardPiece>> selectedBoardPieces;
+    std::vector<BoardTile> boardTiles;
+};
+
+struct BattleConfig {
+    // config for the engine systems
+};
+
 class BattleScene : public Scene {
   public:
-    BattleScene(BattleLayout layout);
+    BattleScene(
+        SceneManager& scenes,
+        BattleData data,
+        BattleLayout layout = {},
+        BattleConfig config = {}
+    );
 
-    void start();
     void update(float dt) override;
     void render(RenderSystem& renderer) override;
 
   private:
+    // Debug tracing for every core event, wired independently of the widget
+    // subscriptions. Silence with SetTraceLogLevel(LOG_WARNING).
+    void subscribeLogging();
+
+    // Declaration order is initialization order: _layout must stay above the
+    // UI members, which read their configs out of it.
     SceneManager& _scenes; // unused until scene transitions exist; shape set now
 
     BattleLayout _layout;
 
-    // systems
+    // engine systems
     InputSystem _inputSystem;
     HitTestSystem _hitTestSystem;
+
+    // UI systems
     TargetSystem _targetSystem;
     IntentSystem _intentSystem;
+    HandLayoutSystem _handLayoutSystem;
+    BattleResourceViewSystem _battleResourceViewSystem;
+    TurnViewSystem _turnViewSystem;
 
+    // core systems — none is default-constructible, so all four are
+    // initialized from `data` in the constructor's init-list.
     CardFlowSystem _cardFlowSystem;
     TurnSystem _turnSystem;
     BattleResourceSystem _battleResourceSystem;
     EffectSystem _effectSystem;
+
     // UI elements
-    CardPileUI _drawPile;
-    CardPileUI _discardPile;
-    FixedSlotHandUI _leftHand;
-    FixedSlotHandUI _rightHand;
     BoardUI _board;
-    FireResourcePanelUI _firePointsPanel;
-    ActionPointsPanelUI _actionPointsPanel;
     ProgressPanelUI _progressPanel;
-    BattleInfoPanelUI _battleInfoPanel;
     ButtonUI _endTurnButton;
     CaptainUI _captain;
-    std::list<CardUI> _cards;
     std::list<UnitUI> _units;
 };

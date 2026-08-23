@@ -1,9 +1,8 @@
 #pragma once
 
 #include "engine/eventBus.h"
-#include "core/events/currentActionPointsChangedEvent.h"
-#include "core/events/currentFirePointsChangedEvent.h"
-#include "core/events/maxActionPointsChangedEvent.h"
+#include "core/events/actionPointsRefilledEvent.h"
+#include "core/events/resourcesSpentEvent.h"
 
 struct ActionPoints {
     int current = 0;
@@ -43,24 +42,21 @@ class BattleResourceSystem {
     }
 
     void refillActionPoints();
-    void changeCurrentActionPoints(int newValue);
-
-    void changeCurrentFirePoints(int newValue);
 
     bool canAfford(int actionCost, int fireCost);
-    void spend(int actionCost, int fireCost);
+    void spendResources(int actionCost, int fireCost);
 
-    void onCurrentFirePointsChanged(std::function<void(CurrentFirePointsChangedEvent)> cb) {
-        _currentFirePointsChanged.subscribe(cb);
+    void onActionPointsRefilled(std::function<void(ActionPointsRefilledEvent)> cb) {
+        _actionPointsRefilled.subscribe(cb);
     }
-    void onCurrentActionPointsChanged(std::function<void(CurrentActionPointsChangedEvent)> cb) {
-        _currentActionPointsChanged.subscribe(cb);
+    void onResourcesSpent(std::function<void(ResourcesSpentEvent)> cb) {
+        _resourcesSpent.subscribe(cb);
     }
 
   private:
     ActionPoints _actionPoints;
     FirePoints _firePoints;
 
-    EventBus<CurrentFirePointsChangedEvent> _currentFirePointsChanged;
-    EventBus<CurrentActionPointsChangedEvent> _currentActionPointsChanged;
+    EventBus<ActionPointsRefilledEvent> _actionPointsRefilled;
+    EventBus<ResourcesSpentEvent> _resourcesSpent;
 };

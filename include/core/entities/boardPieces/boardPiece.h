@@ -3,6 +3,7 @@
 #include <string>
 #include "core/types/teamType.h"
 #include "core/entities/entity.h"
+#include "engine/hexCoord.h"
 
 enum class BoardPieceType {
     Unit,

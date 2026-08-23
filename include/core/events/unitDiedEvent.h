@@ -4,5 +4,5 @@
 #include "engine/hexCoord.h"
 
 struct UnitDiedEvent {
-    uint32_t unitId;
+    uint32_t id;
 };

@@ -29,6 +29,18 @@ struct HexCoordHash {
     }
 };
 
+// Makes std::unordered_map<HexCoord, V> work without naming the hash at every
+// declaration site. Delegates to HexCoordHash, so both spellings stay valid.
+// (HexCoord already provides operator==, the other thing unordered_map needs.)
+namespace std {
+template <>
+struct hash<HexCoord> {
+    size_t operator()(const HexCoord& h) const noexcept {
+        return HexCoordHash{}(h);
+    }
+};
+} // namespace std
+
 inline std::array<HexCoord, 6> hexNeighbors(HexCoord h) {
     return {
         {{h.q + 1, h.r - 1},
