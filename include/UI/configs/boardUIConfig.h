@@ -7,13 +7,11 @@
 // Pure theme: which tiles exist is game content and reaches BoardUI as a
 // constructor parameter sourced from the core board.
 struct BoardUIConfig {
-    HitBoxComponent hitBox;
-    SpriteComponent sprite;
     TransformComponent transform;
 
     // Hex radius in pixels; spreads the grid and is the natural knob for
     // sizing the board.
-    float hexSize = 100.0f;
+    ;
 
     // Where a unit stands on its tile, local to the tile's centre.
     Vector2 unitAnchorOffset = {0.0f, -20.0f};

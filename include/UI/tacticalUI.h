@@ -13,7 +13,7 @@
 #include "UI/configs/progressPanelUIConfig.h"
 #include "UI/rosterUI.h"
 #include "UI/configs/rosterUIConfig.h"
-#include "UI/unitUI.h"
+#include "UI/boardPieces/unitUI.h"
 #include "UI/configs/unitUIConfig.h"
 
 // Composition for the tactical (deployment) view: the board with its units,

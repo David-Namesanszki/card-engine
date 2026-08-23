@@ -9,7 +9,7 @@
 
 class CardPileUI {
   public:
-    CardPileUI(CardPileUIConfig config = {});
+    CardPileUI(CardPileUIConfig config = {}, size_t size = 0);
 
     void setCount(int count);
 

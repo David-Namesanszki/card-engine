@@ -7,21 +7,39 @@ ActionPointsPanelUI::ActionPointsPanelUI(ActionPointsPanelUIConfig config)
       _config(config) {
 }
 
-void ActionPointsPanelUI::setCurrentActionPoints(int current) {
-    if (current != _maxActionPoints) {
-        _maxActionPoints = current;
-        _pips.assign(current, Pip{});
-        for (int i = 0; i < current; i++) {
-            _pips[i].transform.position = slotPosition(i);
-            _pips[i].sprite.texture = _config.availableTexture;
-            _pips[i].sprite.size = _config.pipSize;
-        }
+// Rebuilds the pip row. Only the maximum decides how many pips exist and where
+// they sit, so this is the only place that touches the vector.
+void ActionPointsPanelUI::setMaxActionPoints(int max) {
+    max = std::max(max, 0);
+    if (max == _maxActionPoints)
+        return;
+
+    _maxActionPoints = max;
+    _currentActionPoints = std::clamp(_currentActionPoints, 0, _maxActionPoints);
+
+    // slotPosition() spaces the row using _maxActionPoints, so the new maximum
+    // has to be in place before any position is computed.
+    _pips.assign(_maxActionPoints, Pip{});
+    for (int i = 0; i < _maxActionPoints; i++) {
+        _pips[i].transform.position = slotPosition(i);
+        _pips[i].sprite.size = _config.pipSize;
     }
 
-    int spentCount = std::clamp(_maxActionPoints - current, 0, _maxActionPoints);
-    for (int i = 0; i < (int)_pips.size(); i++)
+    applyPipTextures();
+}
+
+// Spending never changes how many pips there are — only which of them are lit.
+void ActionPointsPanelUI::setCurrentActionPoints(int current) {
+    _currentActionPoints = std::clamp(current, 0, _maxActionPoints);
+    applyPipTextures();
+}
+
+// Pips deplete right to left: the leftmost _currentActionPoints stay available,
+// the rest read as spent. Flip the comparison to deplete the other way.
+void ActionPointsPanelUI::applyPipTextures() {
+    for (int i = 0; i < static_cast<int>(_pips.size()); i++)
         _pips[i].sprite.texture =
-            (i < spentCount) ? _config.spentTexture : _config.availableTexture;
+            (i < _currentActionPoints) ? _config.availableTexture : _config.spentTexture;
 }
 
 Vector2 ActionPointsPanelUI::slotPosition(int slot) const {

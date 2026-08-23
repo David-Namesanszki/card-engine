@@ -5,7 +5,7 @@
 #include "UI/captainUI.h"
 #include "UI/cardPileUI.h"
 #include "UI/cardUI.h"
-#include "UI/constructionUI.h"
+#include "UI/boardPieces/constructionUI.h"
 #include "UI/fixedSlotHandUI.h"
 #include "UI/panels/actionPointsPanelUI.h"
 #include "UI/panels/battleInfoPanelUI.h"
@@ -14,7 +14,7 @@
 #include "UI/rosterUI.h"
 #include "UI/scrollViewUI.h"
 #include "UI/tacticalUI.h"
-#include "UI/unitUI.h"
+#include "UI/boardPieces/unitUI.h"
 
 #include <algorithm>
 

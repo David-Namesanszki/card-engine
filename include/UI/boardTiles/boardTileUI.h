@@ -1,16 +1,18 @@
 #pragma once
 
 #include <cstdint>
-#include "core/entities/boardTile.h"
 #include "engine/components/transformComponent.h"
 #include "engine/components/spriteComponent.h"
 #include "engine/components/hitBoxComponent.h"
 #include "UI/anchorPoint.h"
 #include "core/entities/boardPieces/boardPiece.h"
+#include "UI/entityUI.h"
 
-class BoardTileUI {
+class BoardTileUI : public EntityUI {
   public:
-    BoardTileUI(HexCoord coord, BoardTileType tileType, TeamType team);
+    BoardTileUI(uint32_t id, HexCoord coord)
+        : EntityUI(id),
+          _coord(coord) {};
 
     // A tile is a location, so the hex coordinate is its identity — the same
     // vocabulary the core Board speaks. There is no separate tile id.
@@ -18,21 +20,13 @@ class BoardTileUI {
         return _coord;
     }
 
-    TransformComponent transform;
     SpriteComponent sprite;
     HitBoxComponent hitbox;
     // Where a unit standing on this tile is placed (see BoardUI::unitPosition).
     AnchorPoint unitAnchor;
 
-    void addOccupant(uint32_t id) {
-        _occupant.emplace(id);
-    }
-
-    std::optional<uint32_t> occupant() const {
-        return _occupant;
-    }
+    virtual ~BoardTileUI() = default;
 
   private:
-    std::optional<uint32_t> _occupant = std::nullopt;
     HexCoord _coord;
 };

@@ -9,13 +9,15 @@
 
 #include "engine/systems/renderSystem.h"
 
-class HandLayoutSystem {
+class CardFlowViewSystem {
   public:
-    HandLayoutSystem(
+    CardFlowViewSystem(
         HandUIConfig leftHandUI,
         HandUIConfig rightHandUI,
         CardPileUIConfig drawPileUI,
-        CardPileUIConfig discardPileUI
+        CardPileUIConfig discardPileUI,
+        size_t drawPileSize,
+        size_t discardPileSize
     );
 
     void update(float dt);

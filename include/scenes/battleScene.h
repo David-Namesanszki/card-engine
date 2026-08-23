@@ -32,8 +32,8 @@
 #include "UI/panels/battleInfoPanelUI.h"
 #include "UI/panels/fireResourcePanelUI.h"
 #include "UI/panels/progressPanelUI.h"
-#include "UI/unitUI.h"
-#include "UI/systems/handLayoutSystem.h"
+#include "UI/boardPieces/unitUI.h"
+#include "UI/systems/cardFlowViewSystem.h"
 #include "UI/systems/battleResourceViewSystem.h"
 #include "UI/systems/turnViewSystem.h"
 
@@ -106,7 +106,7 @@ class BattleScene : public Scene {
     // UI systems
     TargetSystem _targetSystem;
     IntentSystem _intentSystem;
-    HandLayoutSystem _handLayoutSystem;
+    CardFlowViewSystem _cardFlowViewSystem;
     BattleResourceViewSystem _battleResourceViewSystem;
     TurnViewSystem _turnViewSystem;
 

@@ -1,6 +1,6 @@
 #include "UI/cardPileUI.h"
 
-CardPileUI::CardPileUI(CardPileUIConfig config)
+CardPileUI::CardPileUI(CardPileUIConfig config, size_t size)
     : sprite(config.sprite),
       transform(config.transform),
       hitbox(config.hitBox),
@@ -9,7 +9,7 @@ CardPileUI::CardPileUI(CardPileUIConfig config)
     transform.addChild(&_anchorPoint.transform);
     transform.addChild(&countText.transform);
     countText.transform.position = {-5.0f, -6.0f}; // roughly centred on the pile
-    countText.text.text = "?"; // real count arrives via events
+    countText.text.text = std::to_string(size);    // later counts arrive via events
     hitbox.setRectangle(sprite.size);
 }
 

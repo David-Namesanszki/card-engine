@@ -24,6 +24,7 @@ class ActionPointsPanelUI {
 
   private:
     Vector2 slotPosition(int slot) const;
+    void applyPipTextures();
 
     ActionPointsPanelUIConfig _config;
     int _maxActionPoints = 0;

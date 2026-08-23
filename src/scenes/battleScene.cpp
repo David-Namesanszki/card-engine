@@ -1,4 +1,4 @@
-#include "scenes/battleScene.h"
+﻿#include "scenes/battleScene.h"
 #include "raylib.h"
 #include "UI/labels.h"
 #include "engine/systems/renderSystem.h"
@@ -25,11 +25,13 @@ BattleScene::BattleScene(
       _battleResourceSystem(data.maxActionPointCount, data.currentFirePointCount),
       _effectSystem(std::move(data.selectedBoardPieces), std::move(data.boardTiles)),
 
-      _handLayoutSystem(
+      _cardFlowViewSystem(
           _layout.leftHandConfig,
           _layout.rightHandConfig,
           _layout.drawPileConfig,
-          _layout.discardPileConfig
+          _layout.discardPileConfig,
+          data.deck.size(),
+          0
       ),
 
       _battleResourceViewSystem(
@@ -46,16 +48,16 @@ BattleScene::BattleScene(
       _endTurnButton(_layout.endTurnButtonConfig),
       _captain(_layout.captainConfig) {
     _cardFlowSystem.onCardDrawn([this](CardDrawnEvent e) {
-        _handLayoutSystem.drawCard(e.card.getId(), e.card.getSplashArt(), e.drawPileSize);
+        _cardFlowViewSystem.drawCard(e.card.getId(), e.card.getSplashArt(), e.drawPileSize);
     });
     _cardFlowSystem.onCardDiscarded([this](CardDiscardedEvent e) {
-        _handLayoutSystem.discardCard(e.hand, e.cardId, e.discardPileSize);
+        _cardFlowViewSystem.discardCard(e.hand, e.cardId, e.discardPileSize);
     });
     _cardFlowSystem.onCardTransferredToRight([this](CardTransferredToRightEvent e) {
-        _handLayoutSystem.transferCard(e.cardId);
+        _cardFlowViewSystem.transferCard(e.cardId);
     });
     _cardFlowSystem.onDrawPileRefilled([this](DrawPileRefilledEvent e) {
-        _handLayoutSystem.refillDrawPile(e.drawPileSize, e.discardPileSize);
+        _cardFlowViewSystem.refillDrawPile(e.drawPileSize, e.discardPileSize);
     });
 
     _turnSystem.onTurnAdvanced([this](TurnAdvancedEvent e) {
@@ -237,7 +239,7 @@ void BattleScene::update(float) {
 void BattleScene::render(RenderSystem& renderer) {
     _battleResourceViewSystem.render(renderer);
     _turnViewSystem.render(renderer);
-    _handLayoutSystem.render(renderer);
+    _cardFlowViewSystem.render(renderer);
     renderer.renderBoard(_board);
 
     renderer.renderCaptain(_captain);

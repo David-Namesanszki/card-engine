@@ -5,8 +5,8 @@
 #include <cstdint>
 #include "UI/scrollViewUI.h"
 #include "UI/scrollableGridUI.h"
-#include "UI/unitUI.h"
-#include "UI/constructionUI.h"
+#include "UI/boardPieces/unitUI.h"
+#include "UI/boardPieces/constructionUI.h"
 #include "UI/configs/rosterUIConfig.h"
 
 class RosterUI {

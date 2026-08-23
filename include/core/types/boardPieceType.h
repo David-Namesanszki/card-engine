@@ -1,7 +1,6 @@
 #pragma once
 
-enum class BoardTileType {
-    Effect,
+enum class BoardPieceType {
     Unit,
     Construction
 };
